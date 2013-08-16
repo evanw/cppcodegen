@@ -110,3 +110,31 @@ test(MemberExpression('::',
 ), [
   '(sizeof foo)::bar',
 ]);
+
+test(UnaryExpression('++', true,
+  UnaryExpression('--', false,
+    Identifier('foo'))
+), [
+  '++foo--',
+]);
+
+test(UnaryExpression('--', false,
+  UnaryExpression('++', true,
+    Identifier('foo'))
+), [
+  '(++foo)--',
+]);
+
+test(UnaryExpression('--', true,
+  UnaryExpression('--', true,
+    Identifier('foo'))
+), [
+  '-- --foo',
+]);
+
+test(UnaryExpression('++', false,
+  UnaryExpression('++', false,
+    Identifier('foo'))
+), [
+  'foo++ ++',
+]);
