@@ -160,7 +160,7 @@ function FunctionDeclaration(qualifiers: any[], symbol: any, body: any): Object 
 // Other
 ////////////////////////////////////////////////////////////////////////////////
 
-function DeclarationSymbol(name: string, declarators: any, init: any): Object {
+function DeclarationSymbol(name: any, declarators: any, init: any): Object {
   return {
     type: 'DeclarationSymbol',
     name: name,

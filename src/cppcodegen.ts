@@ -40,7 +40,7 @@ module cppcodegen {
                                                                         //   update: Expression | null, body: Statement }
 
     // Other
-    export var DeclarationSymbol: string     = 'DeclarationSymbol';     // { name: string, declarators: Declarator, init: Expression | null }
+    export var DeclarationSymbol: string     = 'DeclarationSymbol';     // { name: Identifier | null, declarators: Declarator, init: Expression | null }
     export var ArgumentDeclaration: string   = 'ArgumentDeclaration';   // { qualifiers: Identifier[], symbol: DeclarationSymbol | null }
     export var PrefixDeclarator: string      = 'PrefixDeclarator';      // { text: string, next: Declarator }
     export var FunctionDeclarator: string    = 'FunctionDeclarator';    // { arguments: VariableDeclaration[], next: Declarator }
@@ -258,8 +258,8 @@ module cppcodegen {
     if (node.type !== Syntax.DeclarationSymbol) {
       throw new Error('Expected declaration symbol but got type: ' + node.type);
     }
-    return generateDeclarator(node.declarators, node.name) + (node.init === null ? '' :
-      ' = ' + generateExpression(node.init, Precedence.Assignment));
+    return generateDeclarator(node.declarators, node.name !== null ? generateIdentifier(node.name) : '') +
+      (node.init === null ? '' : ' = ' + generateExpression(node.init, Precedence.Assignment));
   }
 
   function generateQualifierList(node: any): string {
