@@ -34,9 +34,10 @@ module cppcodegen {
     export var Program: string               = 'Program';               // { body: Statement[] }
     export var ReturnStatement: string       = 'ReturnStatement';       // { argument: Expression | null }
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
-    export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration, test: Expression, update: Expression, body: Statement }
     export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], symbols: DeclarationSymbol[] }
     export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], symbol: DeclarationSymbol, body: BlockStatement }
+    export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration | null, test: Expression | null,
+                                                                        //   update: Expression | null, body: Statement }
 
     // Other
     export var DeclarationSymbol: string     = 'DeclarationSymbol';     // { name: string, declarators: Declarator, init: Expression | null }
@@ -457,6 +458,14 @@ module cppcodegen {
       result = 'while (' + generateExpression(node.test, Precedence.Sequence) + ') ' + generateStatement(node.body);
       break;
 
+    case Syntax.ForStatement:
+      result = 'for (';
+      result += node.init.type === Syntax.VariableDeclaration ? generateStatement(node.init) : generateExpression(node.init, Precedence.Sequence) + ';';
+      result += node.test !== null ? ' ' + generateExpression(node.test, Precedence.Sequence) + ';' : ';';
+      result += (node.update !== null ? ' ' + generateExpression(node.update, Precedence.Sequence) : '') + ') ';
+      result += generateStatement(node.body);
+      break;
+
     case Syntax.VariableDeclaration:
       result = generateQualifierList(node) + ' ' + node.symbols.map(s => generateDeclarationSymbol(s)).join(', ') + ';';
       break;
@@ -481,7 +490,7 @@ module cppcodegen {
     var result: any;
 
     options = options || {};
-    indent = options.indent || '';
+    indent = options.indent || '    ';
     base = options.base || '';
 
     switch (node.type) {
@@ -523,6 +532,10 @@ module cppcodegen {
 
     case Syntax.DeclarationSymbol:
       result = generateDeclarationSymbol(node);
+      break;
+
+    case Syntax.ArgumentDeclaration:
+      result = generateArgumentDeclaration(node);
       break;
 
     case Syntax.PrefixDeclarator:

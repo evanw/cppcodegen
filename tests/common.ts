@@ -5,7 +5,7 @@ require('source-map-support').install();
 
 function test(node: any, expected: string[]) {
   it(('\n' + JSON.stringify(node, null, 2)).replace(/\n/g, '\n      '), () => {
-    require('assert').strictEqual(cppcodegen.generate(node), expected.join('\n'));
+    require('assert').strictEqual(cppcodegen.generate(node, { indent: '  ' }), expected.join('\n'));
   });
 }
 
