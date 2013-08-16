@@ -2,21 +2,21 @@
 
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'), null, null)]
+  [Declarator(Identifier('foo'), null, null)]
 ), [
   'int foo;',
 ]);
 
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'), null, IntegerLiteral(1))]
+  [Declarator(Identifier('foo'), null, IntegerLiteral(1))]
 ), [
   'int foo = 1;',
 ]);
 
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'), null, AssignmentExpression('=',
+  [Declarator(Identifier('foo'), null, AssignmentExpression('=',
     Identifier('bar'),
     IntegerLiteral(1)))]
 ), [
@@ -26,9 +26,9 @@ test(VariableDeclaration(
 // declare foo as volatile pointer to const int
 test(VariableDeclaration(
   [Identifier('const'), Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'),
-    PrefixDeclarator('*',
-      PrefixDeclarator('volatile',
+  [Declarator(Identifier('foo'),
+    DeclaratorPrefix('*',
+      DeclaratorPrefix('volatile',
         null)),
     NullLiteral())]
 ), [
@@ -38,10 +38,10 @@ test(VariableDeclaration(
 // declare foo as pointer to array 1 of pointer to int
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'),
-    PrefixDeclarator('*',
-      ArrayDeclarator(1,
-        PrefixDeclarator('*',
+  [Declarator(Identifier('foo'),
+    DeclaratorPrefix('*',
+      DeclaratorArray(1,
+        DeclaratorPrefix('*',
           null))),
     NullLiteral())]
 ), [
@@ -51,10 +51,10 @@ test(VariableDeclaration(
 // declare foo as pointer to pointer to array 1 of int
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'),
-    ArrayDeclarator(1,
-      PrefixDeclarator('*',
-        PrefixDeclarator('*',
+  [Declarator(Identifier('foo'),
+    DeclaratorArray(1,
+      DeclaratorPrefix('*',
+        DeclaratorPrefix('*',
           null))),
     NullLiteral())]
 ), [
@@ -64,10 +64,10 @@ test(VariableDeclaration(
 // declare foo as array 1 of pointer to pointer to int
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'),
-    PrefixDeclarator('*',
-      PrefixDeclarator('*',
-        ArrayDeclarator(1,
+  [Declarator(Identifier('foo'),
+    DeclaratorPrefix('*',
+      DeclaratorPrefix('*',
+        DeclaratorArray(1,
           null))),
     NullLiteral())]
 ), [
@@ -77,12 +77,12 @@ test(VariableDeclaration(
 // declare foo as array 1 of function (int, double) returning pointer to int
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'),
-    PrefixDeclarator('*',
-      FunctionDeclarator([
+  [Declarator(Identifier('foo'),
+    DeclaratorPrefix('*',
+      DeclaratorFunction([
         ArgumentDeclaration([Identifier('int')], null),
         ArgumentDeclaration([Identifier('double')], null)],
-        ArrayDeclarator(1,
+        DeclaratorArray(1,
           null))),
     NullLiteral())]
 ), [
@@ -92,12 +92,12 @@ test(VariableDeclaration(
 // declare foo as pointer to function (int, double) returning array 1 of int
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'),
-    ArrayDeclarator(1,
-      FunctionDeclarator([
+  [Declarator(Identifier('foo'),
+    DeclaratorArray(1,
+      DeclaratorFunction([
         ArgumentDeclaration([Identifier('int')], null),
         ArgumentDeclaration([Identifier('double')], null)],
-        PrefixDeclarator('*',
+        DeclaratorPrefix('*',
           null))),
     NullLiteral())]
 ), [
@@ -107,11 +107,11 @@ test(VariableDeclaration(
 // declare foo as pointer to array 2 of array 1 of array of int
 test(VariableDeclaration(
   [Identifier('int')],
-  [DeclarationSymbol(Identifier('foo'),
-    ArrayDeclarator(null,
-      ArrayDeclarator(1,
-        ArrayDeclarator(2,
-        PrefixDeclarator('*',
+  [Declarator(Identifier('foo'),
+    DeclaratorArray(null,
+      DeclaratorArray(1,
+        DeclaratorArray(2,
+        DeclaratorPrefix('*',
           null)))),
     NullLiteral())]
 ), [
@@ -121,10 +121,10 @@ test(VariableDeclaration(
 // declare foo as function (int, double) returning int
 test(FunctionDeclaration(
   [Identifier('int')],
-  DeclarationSymbol(Identifier('foo'),
-    FunctionDeclarator([
-      ArgumentDeclaration([Identifier('int')], DeclarationSymbol(Identifier('a'), null, null)),
-      ArgumentDeclaration([Identifier('double')], DeclarationSymbol(Identifier('b'), null, null))],
+  Declarator(Identifier('foo'),
+    DeclaratorFunction([
+      ArgumentDeclaration([Identifier('int')], Declarator(Identifier('a'), null, null)),
+      ArgumentDeclaration([Identifier('double')], Declarator(Identifier('b'), null, null))],
         null),
     null),
   BlockStatement([])
@@ -136,14 +136,14 @@ test(FunctionDeclaration(
 // declare foo as function (int, double) returning pointer to function (bool) returning array of int
 test(FunctionDeclaration(
   [Identifier('int')],
-  DeclarationSymbol(Identifier('foo'),
-    ArrayDeclarator(null,
-      FunctionDeclarator([
+  Declarator(Identifier('foo'),
+    DeclaratorArray(null,
+      DeclaratorFunction([
         ArgumentDeclaration([Identifier('bool')], null)],
-        PrefixDeclarator('*',
-          FunctionDeclarator([
-            ArgumentDeclaration([Identifier('int')], DeclarationSymbol(Identifier('a'), null, null)),
-            ArgumentDeclaration([Identifier('double')], DeclarationSymbol(Identifier('b'), null, null))],
+        DeclaratorPrefix('*',
+          DeclaratorFunction([
+            ArgumentDeclaration([Identifier('int')], Declarator(Identifier('a'), null, null)),
+            ArgumentDeclaration([Identifier('double')], Declarator(Identifier('b'), null, null))],
               null)))),
     null),
   BlockStatement([])
@@ -155,15 +155,15 @@ test(FunctionDeclaration(
 // declare foo as function (pointer to int, double, pointer to function (pointer to void, pointer to int) returning bool) returning int
 test(FunctionDeclaration(
   [Identifier('int')],
-  DeclarationSymbol(Identifier('foo'),
-    FunctionDeclarator([
-      ArgumentDeclaration([Identifier('int')], DeclarationSymbol(null, PrefixDeclarator('*', null), null)),
+  Declarator(Identifier('foo'),
+    DeclaratorFunction([
+      ArgumentDeclaration([Identifier('int')], Declarator(null, DeclaratorPrefix('*', null), null)),
       ArgumentDeclaration([Identifier('double')], null),
-      ArgumentDeclaration([Identifier('bool')], DeclarationSymbol(null,
-        FunctionDeclarator([
-          ArgumentDeclaration([Identifier('void')], DeclarationSymbol(null, PrefixDeclarator('*', null), null)),
-          ArgumentDeclaration([Identifier('int')], DeclarationSymbol(null, PrefixDeclarator('&', null), null))],
-          PrefixDeclarator('*', null)), null))],
+      ArgumentDeclaration([Identifier('bool')], Declarator(null,
+        DeclaratorFunction([
+          ArgumentDeclaration([Identifier('void')], Declarator(null, DeclaratorPrefix('*', null), null)),
+          ArgumentDeclaration([Identifier('int')], Declarator(null, DeclaratorPrefix('&', null), null))],
+          DeclaratorPrefix('*', null)), null))],
         null),
     null),
   BlockStatement([])

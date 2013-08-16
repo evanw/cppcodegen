@@ -160,11 +160,11 @@ function FunctionDeclaration(qualifiers: any[], symbol: any, body: any): Object 
 // Other
 ////////////////////////////////////////////////////////////////////////////////
 
-function DeclarationSymbol(name: any, declarators: any, init: any): Object {
+function Declarator(name: any, wrapper: any, init: any): Object {
   return {
-    type: 'DeclarationSymbol',
+    type: 'Declarator',
     name: name,
-    declarators: declarators,
+    wrapper: wrapper,
     init: init,
   };
 }
@@ -177,25 +177,25 @@ function ArgumentDeclaration(qualifiers: any[], symbol: any): Object {
   };
 }
 
-function PrefixDeclarator(text: string, next: any): Object {
+function DeclaratorPrefix(text: string, next: any): Object {
   return {
-    type: 'PrefixDeclarator',
+    type: 'DeclaratorPrefix',
     text: text,
     next: next,
   };
 }
 
-function FunctionDeclarator(args: any[], next: any): Object {
+function DeclaratorFunction(args: any[], next: any): Object {
   return {
-    type: 'FunctionDeclarator',
+    type: 'DeclaratorFunction',
     'arguments': args,
     next: next,
   };
 }
 
-function ArrayDeclarator(size: number, next: any): Object {
+function DeclaratorArray(size: number, next: any): Object {
   return {
-    type: 'ArrayDeclarator',
+    type: 'DeclaratorArray',
     size: size,
     next: next,
   };

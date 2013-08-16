@@ -34,17 +34,17 @@ module cppcodegen {
     export var Program: string               = 'Program';               // { body: Statement[] }
     export var ReturnStatement: string       = 'ReturnStatement';       // { argument: Expression | null }
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
-    export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], symbols: DeclarationSymbol[] }
-    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], symbol: DeclarationSymbol, body: BlockStatement }
+    export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], symbols: Declarator[] }
+    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], symbol: Declarator, body: BlockStatement }
     export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration | null, test: Expression | null,
                                                                         //   update: Expression | null, body: Statement }
 
     // Other
-    export var DeclarationSymbol: string     = 'DeclarationSymbol';     // { name: Identifier | null, declarators: Declarator, init: Expression | null }
-    export var ArgumentDeclaration: string   = 'ArgumentDeclaration';   // { qualifiers: Identifier[], symbol: DeclarationSymbol | null }
-    export var PrefixDeclarator: string      = 'PrefixDeclarator';      // { text: string, next: Declarator }
-    export var FunctionDeclarator: string    = 'FunctionDeclarator';    // { arguments: VariableDeclaration[], next: Declarator }
-    export var ArrayDeclarator: string       = 'ArrayDeclarator';       // { size: number | null, next: Declarator }
+    export var Declarator: string            = 'Declarator';            // { name: Identifier | null, wrapper: DeclaratorWrapper, init: Expression | null }
+    export var ArgumentDeclaration: string   = 'ArgumentDeclaration';   // { qualifiers: Identifier[], symbol: Declarator | null }
+    export var DeclaratorPrefix: string      = 'DeclaratorPrefix';      // { text: string, next: DeclaratorWrapper }
+    export var DeclaratorFunction: string    = 'DeclaratorFunction';    // { arguments: VariableDeclaration[], next: DeclaratorWrapper }
+    export var DeclaratorArray: string       = 'DeclaratorArray';       // { size: number | null, next: DeclaratorWrapper }
   }
 
   // See: http://en.cppreference.com/w/cpp/language/operator_precedence
@@ -210,7 +210,7 @@ module cppcodegen {
     return value + '';
   }
 
-  function generateDeclarator(node: any, name: string): string {
+  function generateDeclaratorWrapper(node: any, name: string): string {
     var result: any;
 
     if (node === null) {
@@ -218,30 +218,30 @@ module cppcodegen {
     }
 
     switch (node.type) {
-    case Syntax.PrefixDeclarator:
+    case Syntax.DeclaratorPrefix:
       if (!(node.text in DeclaratorPrefixes)) {
-        throw new Error('Prefix declarator with invalid prefix: ' + node.text);
+        throw new Error('Declarator prefix with invalid prefix: ' + node.text);
       }
-      result = join(node.text, generateDeclarator(node.next, name));
+      result = join(node.text, generateDeclaratorWrapper(node.next, name));
       break;
 
-    case Syntax.FunctionDeclarator:
-      result = generateDeclarator(node.next, name);
-      if (node.next !== null && node.next.type === Syntax.PrefixDeclarator) result = '(' + result + ')';
+    case Syntax.DeclaratorFunction:
+      result = generateDeclaratorWrapper(node.next, name);
+      if (node.next !== null && node.next.type === Syntax.DeclaratorPrefix) result = '(' + result + ')';
       result += '(' + node.arguments.map(n => generateArgumentDeclaration(n)).join(', ') + ')';
       break;
 
-    case Syntax.ArrayDeclarator:
+    case Syntax.DeclaratorArray:
       if (node.size !== null && (node.size !== (0 | node.size) || node.size < 0)) {
-        throw new Error('Array declarator with invalid size: ' + node.size);
+        throw new Error('Declarator array with invalid size: ' + node.size);
       }
-      result = generateDeclarator(node.next, name);
-      if (node.next !== null && node.next.type === Syntax.PrefixDeclarator) result = '(' + result + ')';
+      result = generateDeclaratorWrapper(node.next, name);
+      if (node.next !== null && node.next.type === Syntax.DeclaratorPrefix) result = '(' + result + ')';
       result += '[' + (node.size !== null ? node.size : '') + ']';
       break;
 
     default:
-      throw new Error('Unknown declarator type: ' + node.type);
+      throw new Error('Unknown declarator wrapper type: ' + node.type);
     }
 
     return result;
@@ -254,11 +254,11 @@ module cppcodegen {
     return node.name;
   }
 
-  function generateDeclarationSymbol(node: any): string {
-    if (node.type !== Syntax.DeclarationSymbol) {
+  function generateDeclarator(node: any): string {
+    if (node.type !== Syntax.Declarator) {
       throw new Error('Expected declaration symbol but got type: ' + node.type);
     }
-    return generateDeclarator(node.declarators, node.name !== null ? generateIdentifier(node.name) : '') +
+    return generateDeclaratorWrapper(node.wrapper, node.name !== null ? generateIdentifier(node.name) : '') +
       (node.init === null ? '' : ' = ' + generateExpression(node.init, Precedence.Assignment));
   }
 
@@ -270,7 +270,7 @@ module cppcodegen {
     if (node.type !== Syntax.ArgumentDeclaration) {
       throw new Error('Expected argument declaration but got type: ' + node.type);
     }
-    return generateQualifierList(node) + (node.symbol === null ? '' : ' ' + generateDeclarationSymbol(node.symbol));
+    return generateQualifierList(node) + (node.symbol === null ? '' : ' ' + generateDeclarator(node.symbol));
   }
 
   function generateExpression(node: any, precedence: Precedence): string {
@@ -467,11 +467,11 @@ module cppcodegen {
       break;
 
     case Syntax.VariableDeclaration:
-      result = generateQualifierList(node) + ' ' + node.symbols.map(s => generateDeclarationSymbol(s)).join(', ') + ';';
+      result = generateQualifierList(node) + ' ' + node.symbols.map(s => generateDeclarator(s)).join(', ') + ';';
       break;
 
     case Syntax.FunctionDeclaration:
-      result = generateQualifierList(node) + ' ' + generateDeclarationSymbol(node.symbol) + ' ' + generateStatement(node.body);
+      result = generateQualifierList(node) + ' ' + generateDeclarator(node.symbol) + ' ' + generateStatement(node.body);
       break;
 
     default:
@@ -530,18 +530,18 @@ module cppcodegen {
       result = generateExpression(node, Precedence.Sequence);
       break;
 
-    case Syntax.DeclarationSymbol:
-      result = generateDeclarationSymbol(node);
+    case Syntax.Declarator:
+      result = generateDeclarator(node);
       break;
 
     case Syntax.ArgumentDeclaration:
       result = generateArgumentDeclaration(node);
       break;
 
-    case Syntax.PrefixDeclarator:
-    case Syntax.FunctionDeclarator:
-    case Syntax.ArrayDeclarator:
-      result = generateDeclarator(node, '');
+    case Syntax.DeclaratorPrefix:
+    case Syntax.DeclaratorFunction:
+    case Syntax.DeclaratorArray:
+      result = generateDeclaratorWrapper(node, '');
       break;
 
     default:
