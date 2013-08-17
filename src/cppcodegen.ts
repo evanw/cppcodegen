@@ -2,7 +2,8 @@
 module cppcodegen {
   var indent: string;
   var base: string;
-  var nullptr: string;
+  var nullptr: boolean;
+  var newlineBeforeBlock: boolean;
 
   export module Syntax {
     // Expressions
@@ -31,7 +32,7 @@ module cppcodegen {
     export var ExpressionStatement: string   = 'ExpressionStatement';   // { expression: Expression }
     export var SwitchStatement: string       = 'SwitchStatement';       // { discriminant: Expression, cases: SwitchCase[] }
     export var SwitchCase: string            = 'SwitchCase';            // { test: Expression | null, consequent: Statement[] }
-    export var IfStatement: string           = 'IfStatement';           // { test: Expression, consequent: Statement, alternate: Statement }
+    export var IfStatement: string           = 'IfStatement';           // { test: Expression, consequent: Statement, alternate: Statement | null }
     export var Program: string               = 'Program';               // { body: Statement[] }
     export var ReturnStatement: string       = 'ReturnStatement';       // { argument: Expression | null }
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
@@ -331,7 +332,7 @@ module cppcodegen {
       break;
 
     case Syntax.NullLiteral:
-      result = nullptr;
+      result = nullptr ? 'nullptr' : 'NULL';
       break;
 
     default:
@@ -339,6 +340,14 @@ module cppcodegen {
     }
 
     return result;
+  }
+
+  function beforeBlock(): string {
+    return newlineBeforeBlock ? '\n' + base : ' ';
+  }
+
+  function generatePossibleBlock(node: any): string {
+    return (node.kind === Syntax.BlockStatement ? beforeBlock() : ' ') + generateStatement(node);
   }
 
   function generateStatement(node: any): string {
@@ -362,7 +371,7 @@ module cppcodegen {
       break;
 
     case Syntax.DoWhileStatement:
-      result = 'do ' + generateStatement(node.body) + ' while (' +
+      result = 'do' + generatePossibleBlock(node.body) + ' while (' +
         generateExpression(node.test, Precedence.Sequence) + ')';
       break;
 
@@ -375,7 +384,7 @@ module cppcodegen {
       break;
 
     case Syntax.SwitchStatement:
-      result = 'switch (' + generateExpression(node.discriminant, Precedence.Sequence) + ') {\n';
+      result = 'switch (' + generateExpression(node.discriminant, Precedence.Sequence) + ')' + beforeBlock() + '{\n';
       result += node.cases.map(n => base + generateStatement(n) + '\n');
       result += base + '}';
       break;
@@ -392,9 +401,9 @@ module cppcodegen {
       break;
 
     case Syntax.IfStatement:
-      result = 'if (' + generateExpression(node.test, Precedence.Sequence) + ') ' +
-        generateStatement(node.consequent) + (node.alternate === null ? '' : ' else ' +
-        generateStatement(node.alternate));
+      result = 'if (' + generateExpression(node.test, Precedence.Sequence) + ')' +
+        generatePossibleBlock(node.consequent) + (node.alternate === null ? '' : ' else' +
+        generatePossibleBlock(node.alternate));
       break;
 
     case Syntax.Program:
@@ -405,15 +414,15 @@ module cppcodegen {
       result = 'return' + (node.argument !== null ? ' ' + generateExpression(node.argument, Precedence.Sequence) : '') + ';';
 
     case Syntax.WhileStatement:
-      result = 'while (' + generateExpression(node.test, Precedence.Sequence) + ') ' + generateStatement(node.body);
+      result = 'while (' + generateExpression(node.test, Precedence.Sequence) + ')' + generatePossibleBlock(node.body);
       break;
 
     case Syntax.ForStatement:
       result = 'for (';
       result += node.init.kind === Syntax.VariableDeclaration ? generateStatement(node.init) : generateExpression(node.init, Precedence.Sequence) + ';';
       result += node.test !== null ? ' ' + generateExpression(node.test, Precedence.Sequence) + ';' : ';';
-      result += (node.update !== null ? ' ' + generateExpression(node.update, Precedence.Sequence) : '') + ') ';
-      result += generateStatement(node.body);
+      result += (node.update !== null ? ' ' + generateExpression(node.update, Precedence.Sequence) : '') + ')';
+      result += generatePossibleBlock(node.body);
       break;
 
     case Syntax.VariableDeclaration:
@@ -432,7 +441,7 @@ module cppcodegen {
 
     case Syntax.FunctionDeclaration:
       result = generateQualifierList(node) + wrapIdentifierWithType(node.type, node.id, new WrapContext()) +
-        (node.body !== null ? ' ' + generateStatement(node.body) : ';');
+        (node.body !== null ? generatePossibleBlock(node.body) : ';');
       break;
 
     default:
@@ -512,7 +521,8 @@ module cppcodegen {
   export interface Options {
     indent?: string;
     base?: string;
-    nullptr?: string;
+    nullptr?: boolean;
+    newlineBeforeBlock?: boolean;
   }
 
   export function generate(node: any, options?: Options): string {
@@ -521,7 +531,8 @@ module cppcodegen {
     options = options || {};
     indent = options.indent || '    ';
     base = options.base || '';
-    nullptr = options.nullptr ? 'nullptr' : 'NULL';
+    nullptr = !!options.nullptr;
+    newlineBeforeBlock = !!options.newlineBeforeBlock;
 
     switch (node.kind) {
     case Syntax.BlockStatement:
