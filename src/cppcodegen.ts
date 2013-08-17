@@ -268,13 +268,13 @@ module cppcodegen {
 
     case Syntax.CallExpression:
       result = generateExpression(node.callee, Precedence.Postfix) + '(' +
-        node['arguments'].map(n => generateExpression(n, Precedence.Assignment)) + ')';
+        node['arguments'].map(n => generateExpression(n, Precedence.Assignment)).join(', ') + ')';
       result = parenthesize(result, Precedence.Postfix, precedence);
       break;
 
     case Syntax.NewExpression:
       result = 'new ' + generateExpression(node.callee, Precedence.Postfix) + '(' +
-        node['arguments'].map(n => generateExpression(n, Precedence.Assignment)) + ')';
+        node['arguments'].map(n => generateExpression(n, Precedence.Assignment)).join(', ') + ')';
       result = parenthesize(result, Precedence.Unary, precedence);
       break;
 
