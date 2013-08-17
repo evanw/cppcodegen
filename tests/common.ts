@@ -63,12 +63,12 @@ function NewExpression(callee: any, _arguments: any[]): Object {
   };
 }
 
-function MemberExpression(operator: string, object: any, property: any): Object {
+function MemberExpression(operator: string, object: any, member: any): Object {
   return {
     kind: 'MemberExpression',
     operator: operator,
     object: object,
-    property: property,
+    member: member,
   };
 }
 
