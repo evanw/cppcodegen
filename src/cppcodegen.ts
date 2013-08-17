@@ -38,7 +38,7 @@ module cppcodegen {
     export var ReturnStatement: string       = 'ReturnStatement';       // { argument?: Expression | null }
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
     export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers?: Identifier[], variables: Variable[] }
-    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers?: Identifier[], type: Type, id: Type, body?: BlockStatement | null }
+    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers?: Identifier[], type: Type, id: Type, initializations?: Expression[] | null, body?: BlockStatement | null }
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
     export var ForStatement: string          = 'ForStatement';          // { setup?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
 
@@ -51,7 +51,7 @@ module cppcodegen {
     export var FunctionType: string          = 'FunctionType';          // { return?: Type | null, arguments: Variable[] }
     export var MemberPointerType: string     = 'MemberPointerType';     // { inner: Type, object: Type }
     export var ArrayType: string             = 'ArrayType';             // { inner: Type, size: Expression }
-    export var ObjectType: string            = 'ObjectType';            // { keyword: 'struct' | 'union' | 'class', id?: Identifier | null, bases: Type[], body?: BlockStatement | null }
+    export var ObjectType: string            = 'ObjectType';            // { keyword: 'struct' | 'union' | 'class', id?: Identifier | null, bases: Expression[], body?: BlockStatement | null }
 
     // Other
     export var Variable: string              = 'Variable';              // { type: Type, id?: Type | null, init?: Expression | null }
@@ -446,6 +446,7 @@ module cppcodegen {
 
     case Syntax.FunctionDeclaration:
       result = generateQualifierList(node) + wrapIdentifierWithType(node.type, node.id, new WrapContext()) +
+        ('initializations' in node && node.initializations !== null ? ' : ' + node.initializations.map(n => generateExpression(n, Precedence.Sequence)).join(', ') : '') +
         ('body' in node && node.body !== null ? generatePossibleBlock(node.body) : ';');
       break;
 
