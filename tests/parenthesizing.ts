@@ -170,3 +170,69 @@ test(BinaryExpression('->*',
 ), [
   'a->*b()',
 ]);
+
+test(SpecializeTemplate(
+  Identifier('a'), [
+  BinaryExpression('>',
+    Identifier('b'),
+    Identifier('c'))]
+), [
+  'a<(b > c)>',
+]);
+
+test(SpecializeTemplate(
+  Identifier('a'), [
+  SpecializeTemplate(
+    Identifier('b'), [
+    BinaryExpression('>',
+      Identifier('c'),
+      Identifier('d'))])]
+), [
+  'a<b<(c > d)> >',
+]);
+
+test(SpecializeTemplate(
+  Identifier('a'), [
+  BinaryExpression('&',
+    Identifier('b'),
+    BinaryExpression('>',
+      Identifier('c'),
+      Identifier('d')))]
+), [
+  'a<(b & c > d)>',
+]);
+
+test(SpecializeTemplate(
+  Identifier('a'), [
+  BinaryExpression('[]',
+    Identifier('b'),
+    BinaryExpression('>',
+      Identifier('c'),
+      Identifier('d')))]
+), [
+  'a<b[c > d]>',
+]);
+
+test(SpecializeTemplate(
+  Identifier('a'), [
+    BinaryExpression('*',
+      Identifier('b'),
+      BinaryExpression('+',
+        Identifier('c'),
+        BinaryExpression('>',
+          Identifier('d'),
+          Identifier('e'))))]
+), [
+  'a<b * (c + (d > e))>',
+]);
+
+test(SpecializeTemplate(
+  Identifier('a'), [
+  BinaryExpression('&',
+    StringLiteral('('),
+    BinaryExpression('>',
+      Identifier('b'),
+      Identifier('c')))]
+), [
+  'a<("(" & b > c)>',
+]);
