@@ -138,3 +138,35 @@ test(UnaryExpression('++', false,
 ), [
   'foo++ ++',
 ]);
+
+test(CallExpression(
+  BinaryExpression('.*',
+    Identifier('a'),
+    Identifier('b')), [
+  IntegerLiteral(1)]
+), [
+  '(a.*b)(1)',
+]);
+
+test(CallExpression(
+  BinaryExpression('->*',
+    Identifier('a'),
+    Identifier('b')), [
+  IntegerLiteral(1)]
+), [
+  '(a->*b)(1)',
+]);
+
+test(BinaryExpression('.*',
+    Identifier('a'),
+    CallExpression(Identifier('b'), [])
+), [
+  'a.*b()',
+]);
+
+test(BinaryExpression('->*',
+    Identifier('a'),
+    CallExpression(Identifier('b'), [])
+), [
+  'a->*b()',
+]);
