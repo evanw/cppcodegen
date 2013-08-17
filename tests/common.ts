@@ -128,6 +128,14 @@ function NullLiteral(): Object {
   };
 }
 
+function SpecializeTemplate(template: any, parameters: any[]): Object {
+  return {
+    kind: 'SpecializeTemplate',
+    template: template,
+    parameters: parameters,
+  };
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Statements
 ////////////////////////////////////////////////////////////////////////////////
@@ -154,6 +162,13 @@ function FunctionDeclaration(qualifiers: any[], type: any, id: any, body: any): 
     type: type,
     id: id,
     body: body,
+  };
+}
+
+function ObjectDeclaration(type: any): Object {
+  return {
+    kind: 'ObjectDeclaration',
+    type: type,
   };
 }
 
@@ -221,18 +236,11 @@ function ArrayType(inner: any, size: any): Object {
   };
 }
 
-function TemplateType(inner: any, parameters: any): Object {
-  return {
-    kind: 'TemplateType',
-    inner: inner,
-    parameters: parameters,
-  };
-}
-
-function ObjectType(keyword: any, bases: any, body: any): Object {
+function ObjectType(keyword: any, id: any, bases: any, body: any): Object {
   return {
     kind: 'ObjectType',
     keyword: keyword,
+    id: id,
     bases: bases,
     body: body,
   };

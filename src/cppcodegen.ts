@@ -22,6 +22,7 @@ module cppcodegen {
     export var BooleanLiteral: string        = 'BooleanLiteral';        // { value: boolean }
     export var StringLiteral: string         = 'StringLiteral';         // { value: string }
     export var NullLiteral: string           = 'NullLiteral';           // {}
+    export var SpecializeTemplate: string    = 'SpecializeTemplate';    // { template: Expression, parameters: Expression[] }
 
     // Statements
     export var BlockStatement: string        = 'BlockStatement';        // { body: Statement[] }
@@ -38,11 +39,12 @@ module cppcodegen {
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
     export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], variables: Variable[] }
     export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], type: Type, id: Identifier, body: BlockStatement | null }
+    export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
     export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration | null, test: Expression | null,
                                                                         //   update: Expression | null, body: Statement }
 
     // Types
-    export var MemberType: string            = 'MemberType';            // { inner: Type, member: Identifier }
+    export var MemberType: string            = 'MemberType';            // { inner: Type | null, member: Identifier }
     export var ConstType: string             = 'ConstType';             // { inner: Type }
     export var VolatileType: string          = 'VolatileType';          // { inner: Type }
     export var PointerType: string           = 'PointerType';           // { inner: Type }
@@ -50,8 +52,7 @@ module cppcodegen {
     export var FunctionType: string          = 'FunctionType';          // { return: Type, arguments: Variable[] }
     export var MemberPointerType: string     = 'MemberPointerType';     // { inner: Type, object: Type }
     export var ArrayType: string             = 'ArrayType';             // { inner: Type, size: Expression }
-    export var TemplateType: string          = 'TemplateType';          // { inner: Type, parameters: Type[] }
-    export var ObjectType: string            = 'ObjectType';            // { keyword: 'struct' | 'union' | 'class', bases: Type[], body: BlockStatement }
+    export var ObjectType: string            = 'ObjectType';            // { keyword: 'struct' | 'union' | 'class', id: Identifier, bases: Type[], body: BlockStatement }
 
     // Other
     export var Variable: string              = 'Variable';              // { type: Type, id: Identifier | null, init: Expression | null }
@@ -100,12 +101,6 @@ module cppcodegen {
     '[]': Precedence.Postfix,
     '.*': Precedence.PointerToMember,
     '->*': Precedence.PointerToMember,
-  };
-
-  var MemberPrecedence: { [operator: string]: Precedence } = {
-    '.': Precedence.Postfix,
-    '->': Precedence.Postfix,
-    '::': Precedence.Scope,
   };
 
   var AssignmentOperators: { [operator: string]: boolean } = {
@@ -164,6 +159,12 @@ module cppcodegen {
     'sizeof': true,
   };
 
+  var ObjectTypeKeywords: { [keyword: string]: boolean } = {
+    'struct': true,
+    'union': true,
+    'class': true,
+  };
+
   function stringRepeat(str: string, num: number): string {
     var result: string = '';
     for (num |= 0; num > 0; num >>>= 1, str += str) {
@@ -193,7 +194,7 @@ module cppcodegen {
   function join(left: string, right: string): string {
     var leftChar = left.charAt(left.length - 1);
     var rightChar = right.charAt(0);
-    if ((leftChar === '+' || leftChar === '-') && leftChar === rightChar ||
+    if ((leftChar === '+' || leftChar === '-' || leftChar === '<' || leftChar === '>') && leftChar === rightChar ||
         isIdentifierPart(leftChar) && isIdentifierPart(rightChar)) {
       return left + ' ' + right;
     }
@@ -335,8 +336,13 @@ module cppcodegen {
       result = nullptr ? 'nullptr' : 'NULL';
       break;
 
+    case Syntax.SpecializeTemplate:
+      result = generateExpression(node.template, Precedence.Scope) + '<' +
+        join(node.parameters.map(n => generateExpression(n, Precedence.Sequence)).join(', '), '>');
+      break;
+
     default:
-      throw new Error('Unknown expression kind: ' + node.kind);
+      return wrapIdentifierWithType(node, null, new WrapContext());
     }
 
     return result;
@@ -444,6 +450,10 @@ module cppcodegen {
         (node.body !== null ? generatePossibleBlock(node.body) : ';');
       break;
 
+    case Syntax.ObjectDeclaration:
+      result = wrapIdentifierWithType(node.type, null, new WrapContext()) + ';';
+      break;
+
     default:
       throw new Error('Unknown statement kind: ' + node.kind);
     }
@@ -457,12 +467,35 @@ module cppcodegen {
     after: string = '';
     isWrapping: boolean = false;
     includePrefix: boolean = true;
+
+    join(id: any, includePrefix: boolean): string {
+      return ((includePrefix ? this.prefix + ' ' : '') +
+        (id !== null ? this.before + generateIdentifier(id) : this.before.trim()) + this.after).trim();
+    }
+  }
+
+  function wrapInnerType(node: any) {
+    var context: WrapContext = new WrapContext();
+    wrapType(node, context);
+    return context.isWrapping ? '(' + context.join(null, true) + ')' : context.prefix;
   }
 
   function wrapType(node: any, context: WrapContext) {
     switch (node.kind) {
     case Syntax.Identifier:
-      context.prefix = node.name;
+    case Syntax.SpecializeTemplate:
+      context.prefix = generateExpression(node, Precedence.Scope);
+      break;
+
+    case Syntax.MemberType:
+      context.prefix = (node.inner !== null ? wrapInnerType(node.inner) : '') + '::' + generateIdentifier(node.member);
+      break;
+
+    case Syntax.ObjectType:
+      if (!(node.keyword in ObjectTypeKeywords)) {
+        throw new Error('Unknown object type keyword: ' + node.keyword);
+      }
+      context.prefix = node.keyword + ' ' + generateIdentifier(node.id) + (node.body !== null ? generatePossibleBlock(node.body) : '');
       break;
 
     case Syntax.ConstType:
@@ -475,13 +508,17 @@ module cppcodegen {
 
     case Syntax.PointerType:
     case Syntax.ReferenceType:
+    case Syntax.MemberPointerType:
       wrapType(node.inner, context);
       context.isWrapping = true;
       if (node.inner.kind === Syntax.ArrayType || node.inner.kind === Syntax.FunctionType) {
         context.before += '(';
         context.after = ')' + context.after;
       }
-      context.before += node.kind === Syntax.PointerType ? '*' : '&';
+      context.before +=
+        node.kind === Syntax.PointerType ? '*' :
+        node.kind === Syntax.ReferenceType ? '&' :
+        wrapInnerType(node.object) + '::*';
       break;
 
     case Syntax.ArrayType:
@@ -503,8 +540,7 @@ module cppcodegen {
 
   function wrapIdentifierWithType(type: any, id: any, context: WrapContext) {
     wrapType(type, context);
-    return ((context.includePrefix ? context.prefix + ' ' : '') +
-      (id !== null ? context.before + generateIdentifier(id) : context.before.trim()) + context.after).trim();
+    return context.join(id, context.includePrefix);
   }
 
   function generateVariable(node: any, context: WrapContext): string {
@@ -547,9 +583,10 @@ module cppcodegen {
     case Syntax.Program:
     case Syntax.ReturnStatement:
     case Syntax.WhileStatement:
-    case Syntax.ForStatement:
     case Syntax.VariableDeclaration:
     case Syntax.FunctionDeclaration:
+    case Syntax.ObjectDeclaration:
+    case Syntax.ForStatement:
       result = generateStatement(node);
       break;
 
@@ -568,6 +605,7 @@ module cppcodegen {
     case Syntax.BooleanLiteral:
     case Syntax.StringLiteral:
     case Syntax.NullLiteral:
+    case Syntax.SpecializeTemplate:
       result = generateExpression(node, Precedence.Sequence);
       break;
 
@@ -579,7 +617,6 @@ module cppcodegen {
     case Syntax.FunctionType:
     case Syntax.MemberPointerType:
     case Syntax.ArrayType:
-    case Syntax.TemplateType:
     case Syntax.ObjectType:
       result = wrapIdentifierWithType(node, null, new WrapContext());
       break;

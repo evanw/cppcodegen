@@ -176,3 +176,89 @@ test(FunctionDeclaration([],
   'int foo(int *, double, bool (*)(void *, int &)) {',
   '}',
 ]);
+
+// declare foo as pointer to Foo::Bar
+test(VariableDeclaration([], [
+  Variable(
+    PointerType(
+      MemberType(
+        Identifier('Foo'),
+        Identifier('Bar'))),
+    Identifier('foo'),
+    null)]
+), [
+  'Foo::Bar *foo;',
+]);
+
+// declare foo as pointer to std::vector<int>
+test(VariableDeclaration([], [
+  Variable(
+    PointerType(
+      SpecializeTemplate(
+        MemberType(
+          Identifier('std'),
+          Identifier('vector')),
+        [Identifier('int')])),
+    Identifier('foo'),
+    null)]
+), [
+  'std::vector<int> *foo;',
+]);
+
+// declare foo as pointer to std::vector<std::vector<int> >
+test(VariableDeclaration([], [
+  Variable(
+    PointerType(
+      SpecializeTemplate(
+        MemberType(
+          Identifier('std'),
+          Identifier('vector')),
+        [SpecializeTemplate(
+          MemberType(
+            Identifier('std'),
+            Identifier('vector')),
+          [Identifier('int')])])),
+    Identifier('foo'),
+    null)]
+), [
+  'std::vector<std::vector<int> > *foo;',
+]);
+
+// declare foo as pointer to member of Foo with type int
+test(VariableDeclaration([], [
+  Variable(
+    MemberPointerType(
+      Identifier('int'),
+      Identifier('Foo')),
+    Identifier('foo'),
+    null)]
+), [
+  'int Foo::*foo;',
+]);
+
+// declare foo as pointer to member of Foo with type function returning int
+test(VariableDeclaration([], [
+  Variable(
+    MemberPointerType(
+      FunctionType(Identifier('int'), []),
+      Identifier('Foo')),
+    Identifier('foo'),
+    null)]
+), [
+  'int (Foo::*foo)();',
+]);
+
+// declare foo as struct Foo
+test(ObjectDeclaration(
+  ObjectType('struct', Identifier('Foo'), [], BlockStatement([
+    VariableDeclaration([
+      Identifier('static')], [
+      Variable(
+        Identifier('int'),
+        Identifier('foo'),
+        null)])]))
+), [
+  'struct Foo {',
+  '  static int foo;',
+  '};',
+]);
