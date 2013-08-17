@@ -15,14 +15,14 @@ function test(node: any, expected: string[]) {
 
 function SequenceExpression(expressions: any[]): Object {
   return {
-    type: 'SequenceExpression',
+    kind: 'SequenceExpression',
     expressions: expressions,
   };
 }
 
 function AssignmentExpression(operator: string, left: any, right: any): Object {
   return {
-    type: 'AssignmentExpression',
+    kind: 'AssignmentExpression',
     operator: operator,
     left: left,
     right: right,
@@ -31,7 +31,7 @@ function AssignmentExpression(operator: string, left: any, right: any): Object {
 
 function ConditionalExpression(test: any, consequent: any, alternate: any): Object {
   return {
-    type: 'ConditionalExpression',
+    kind: 'ConditionalExpression',
     test: test,
     consequent: consequent,
     alternate: alternate,
@@ -40,32 +40,32 @@ function ConditionalExpression(test: any, consequent: any, alternate: any): Obje
 
 function BinaryExpression(operator: string, left: any, right: any): Object {
   return {
-    type: 'BinaryExpression',
+    kind: 'BinaryExpression',
     operator: operator,
     left: left,
     right: right,
   };
 }
 
-function CallExpression(callee: any, args: any[]): Object {
+function CallExpression(callee: any, _arguments: any[]): Object {
   return {
-    type: 'CallExpression',
+    kind: 'CallExpression',
     callee: callee,
-    'arguments': args,
+    'arguments': _arguments,
   };
 }
 
-function NewExpression(callee: any, args: any[]): Object {
+function NewExpression(callee: any, _arguments: any[]): Object {
   return {
-    type: 'NewExpression',
+    kind: 'NewExpression',
     callee: callee,
-    'arguments': args,
+    'arguments': _arguments,
   };
 }
 
 function MemberExpression(operator: string, object: any, property: any): Object {
   return {
-    type: 'MemberExpression',
+    kind: 'MemberExpression',
     operator: operator,
     object: object,
     property: property,
@@ -74,7 +74,7 @@ function MemberExpression(operator: string, object: any, property: any): Object 
 
 function UnaryExpression(operator: string, prefix: boolean, argument: any): Object {
   return {
-    type: 'UnaryExpression',
+    kind: 'UnaryExpression',
     operator: operator,
     prefix: prefix,
     argument: argument,
@@ -83,48 +83,48 @@ function UnaryExpression(operator: string, prefix: boolean, argument: any): Obje
 
 function ThisExpression(): Object {
   return {
-    type: 'ThisExpression',
+    kind: 'ThisExpression',
   };
 }
 
 function Identifier(name: string): Object {
   return {
-    type: 'Identifier',
+    kind: 'Identifier',
     name: name,
   };
 }
 
 function IntegerLiteral(value: number): Object {
   return {
-    type: 'IntegerLiteral',
+    kind: 'IntegerLiteral',
     value: value,
   };
 }
 
 function DoubleLiteral(value: number): Object {
   return {
-    type: 'DoubleLiteral',
+    kind: 'DoubleLiteral',
     value: value,
   };
 }
 
 function BooleanLiteral(value: boolean): Object {
   return {
-    type: 'BooleanLiteral',
+    kind: 'BooleanLiteral',
     value: value,
   };
 }
 
 function StringLiteral(value: string): Object {
   return {
-    type: 'StringLiteral',
+    kind: 'StringLiteral',
     value: value,
   };
 }
 
 function NullLiteral(): Object {
   return {
-    type: 'NullLiteral',
+    kind: 'NullLiteral',
   };
 }
 
@@ -134,24 +134,106 @@ function NullLiteral(): Object {
 
 function BlockStatement(body: any[]): Object {
   return {
-    type: 'BlockStatement',
+    kind: 'BlockStatement',
     body: body,
   };
 }
 
-function VariableDeclaration(qualifiers: any[], symbols: any[]): Object {
+function VariableDeclaration(qualifiers: any[], variables: any[]): Object {
   return {
-    type: 'VariableDeclaration',
+    kind: 'VariableDeclaration',
     qualifiers: qualifiers,
-    symbols: symbols,
+    variables: variables,
   };
 }
 
-function FunctionDeclaration(qualifiers: any[], symbol: any, body: any): Object {
+function FunctionDeclaration(qualifiers: any[], type: any, id: any, body: any): Object {
   return {
-    type: 'FunctionDeclaration',
+    kind: 'FunctionDeclaration',
     qualifiers: qualifiers,
-    symbol: symbol,
+    type: type,
+    id: id,
+    body: body,
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////////////////////
+
+function MemberType(inner: any, member: any): Object {
+  return {
+    kind: 'MemberType',
+    inner: inner,
+    member: member,
+  };
+}
+
+function ConstType(inner: any): Object {
+  return {
+    kind: 'ConstType',
+    inner: inner,
+  };
+}
+
+function VolatileType(inner: any): Object {
+  return {
+    kind: 'VolatileType',
+    inner: inner,
+  };
+}
+
+function PointerType(inner: any): Object {
+  return {
+    kind: 'PointerType',
+    inner: inner,
+  };
+}
+
+function ReferenceType(inner: any): Object {
+  return {
+    kind: 'ReferenceType',
+    inner: inner,
+  };
+}
+
+function FunctionType(_return: any, _arguments: any[]): Object {
+  return {
+    kind: 'FunctionType',
+    'return': _return,
+    'arguments': _arguments,
+  };
+}
+
+function MemberPointerType(inner: any, object: any): Object {
+  return {
+    kind: 'MemberPointerType',
+    inner: inner,
+    object: object,
+  };
+}
+
+function ArrayType(inner: any, size: any): Object {
+  return {
+    kind: 'ArrayType',
+    inner: inner,
+    size: size,
+  };
+}
+
+function TemplateType(inner: any, parameters: any): Object {
+  return {
+    kind: 'TemplateType',
+    inner: inner,
+    parameters: parameters,
+  };
+}
+
+function ObjectType(keyword: any, bases: any, body: any): Object {
+  return {
+    kind: 'ObjectType',
+    keyword: keyword,
+    bases: bases,
     body: body,
   };
 }
@@ -160,43 +242,11 @@ function FunctionDeclaration(qualifiers: any[], symbol: any, body: any): Object 
 // Other
 ////////////////////////////////////////////////////////////////////////////////
 
-function Declarator(name: any, wrapper: any, init: any): Object {
+function Variable(type: any, id: any, init: any): Object {
   return {
-    type: 'Declarator',
-    name: name,
-    wrapper: wrapper,
+    kind: 'Variable',
+    type: type,
+    id: id,
     init: init,
-  };
-}
-
-function ArgumentDeclaration(qualifiers: any[], symbol: any): Object {
-  return {
-    type: 'ArgumentDeclaration',
-    qualifiers: qualifiers,
-    symbol: symbol,
-  };
-}
-
-function DeclaratorPrefix(text: string, next: any): Object {
-  return {
-    type: 'DeclaratorPrefix',
-    text: text,
-    next: next,
-  };
-}
-
-function DeclaratorFunction(args: any[], next: any): Object {
-  return {
-    type: 'DeclaratorFunction',
-    'arguments': args,
-    next: next,
-  };
-}
-
-function DeclaratorArray(size: any, next: any): Object {
-  return {
-    type: 'DeclaratorArray',
-    size: size,
-    next: next,
   };
 }

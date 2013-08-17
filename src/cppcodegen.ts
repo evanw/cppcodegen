@@ -2,6 +2,7 @@
 module cppcodegen {
   var indent: string;
   var base: string;
+  var nullptr: string;
 
   export module Syntax {
     // Expressions
@@ -11,7 +12,7 @@ module cppcodegen {
     export var BinaryExpression: string      = 'BinaryExpression';      // { operator: string, left: Expression, right: Expression }
     export var CallExpression: string        = 'CallExpression';        // { callee: Expression, arguments: Expression[] }
     export var NewExpression: string         = 'NewExpression';         // { callee: Expression, arguments: Expression[] }
-    export var MemberExpression: string      = 'MemberExpression';      // { operator: string, object: Expression, property: Identifier }
+    export var MemberExpression: string      = 'MemberExpression';      // { operator: string, object: Expression, member: Identifier }
     export var UnaryExpression: string       = 'UnaryExpression';       // { operator: string, prefix: boolean, argument: Expression }
     export var ThisExpression: string        = 'ThisExpression';        // {}
     export var Identifier: string            = 'Identifier';            // { name: string }
@@ -34,17 +35,25 @@ module cppcodegen {
     export var Program: string               = 'Program';               // { body: Statement[] }
     export var ReturnStatement: string       = 'ReturnStatement';       // { argument: Expression | null }
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
-    export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], symbols: Declarator[] }
-    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], symbol: Declarator, body: BlockStatement }
+    export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], variables: Variable[] }
+    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], type: Type, id: Identifier, body: BlockStatement | null }
     export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration | null, test: Expression | null,
                                                                         //   update: Expression | null, body: Statement }
 
+    // Types
+    export var MemberType: string            = 'MemberType';            // { inner: Type, member: Identifier }
+    export var ConstType: string             = 'ConstType';             // { inner: Type }
+    export var VolatileType: string          = 'VolatileType';          // { inner: Type }
+    export var PointerType: string           = 'PointerType';           // { inner: Type }
+    export var ReferenceType: string         = 'ReferenceType';         // { inner: Type }
+    export var FunctionType: string          = 'FunctionType';          // { return: Type, arguments: Variable[] }
+    export var MemberPointerType: string     = 'MemberPointerType';     // { inner: Type, object: Type }
+    export var ArrayType: string             = 'ArrayType';             // { inner: Type, size: Expression }
+    export var TemplateType: string          = 'TemplateType';          // { inner: Type, parameters: Type[] }
+    export var ObjectType: string            = 'ObjectType';            // { keyword: 'struct' | 'union' | 'class', bases: Type[], body: BlockStatement }
+
     // Other
-    export var Declarator: string            = 'Declarator';            // { name: Identifier | null, wrapper: DeclaratorWrapper, init: Expression | null }
-    export var ArgumentDeclaration: string   = 'ArgumentDeclaration';   // { qualifiers: Identifier[], symbol: Declarator | null }
-    export var DeclaratorPrefix: string      = 'DeclaratorPrefix';      // { text: string, next: DeclaratorWrapper }
-    export var DeclaratorFunction: string    = 'DeclaratorFunction';    // { arguments: VariableDeclaration[], next: DeclaratorWrapper }
-    export var DeclaratorArray: string       = 'DeclaratorArray';       // { size: Expression | null, next: DeclaratorWrapper }
+    export var Variable: string              = 'Variable';              // { type: Type, id: Identifier | null, init: Expression | null }
   }
 
   // See: http://en.cppreference.com/w/cpp/language/operator_precedence
@@ -154,13 +163,6 @@ module cppcodegen {
     'sizeof': true,
   };
 
-  var DeclaratorPrefixes: { [text: string]: boolean } = {
-    '*': true,
-    '&': true,
-    'const': true,
-    'volatile': true,
-  };
-
   function stringRepeat(str: string, num: number): string {
     var result: string = '';
     for (num |= 0; num > 0; num >>>= 1, str += str) {
@@ -210,70 +212,21 @@ module cppcodegen {
     return value + '';
   }
 
-  function generateDeclaratorWrapper(node: any, name: string): string {
-    var result: any;
-
-    if (node === null) {
-      return name;
-    }
-
-    switch (node.type) {
-    case Syntax.DeclaratorPrefix:
-      if (!(node.text in DeclaratorPrefixes)) {
-        throw new Error('Declarator prefix with invalid prefix: ' + node.text);
-      }
-      result = join(node.text, generateDeclaratorWrapper(node.next, name));
-      break;
-
-    case Syntax.DeclaratorFunction:
-      result = generateDeclaratorWrapper(node.next, name);
-      if (node.next !== null && node.next.type === Syntax.DeclaratorPrefix) result = '(' + result + ')';
-      result += '(' + node.arguments.map(n => generateArgumentDeclaration(n)).join(', ') + ')';
-      break;
-
-    case Syntax.DeclaratorArray:
-      result = generateDeclaratorWrapper(node.next, name);
-      if (node.next !== null && node.next.type === Syntax.DeclaratorPrefix) result = '(' + result + ')';
-      result += '[' + (node.size !== null ? generateExpression(node.size, Precedence.Sequence) : '') + ']';
-      break;
-
-    default:
-      throw new Error('Unknown declarator wrapper type: ' + node.type);
-    }
-
-    return result;
-  }
-
   function generateIdentifier(node: any): string {
-    if (node.type !== Syntax.Identifier) {
-      throw new Error('Expected identifier but got type: ' + node.type);
+    if (node.kind !== Syntax.Identifier) {
+      throw new Error('Expected identifier but got kind: ' + node.kind);
     }
     return node.name;
   }
 
-  function generateDeclarator(node: any): string {
-    if (node.type !== Syntax.Declarator) {
-      throw new Error('Expected declaration symbol but got type: ' + node.type);
-    }
-    return generateDeclaratorWrapper(node.wrapper, node.name !== null ? generateIdentifier(node.name) : '') +
-      (node.init === null ? '' : ' = ' + generateExpression(node.init, Precedence.Assignment));
-  }
-
   function generateQualifierList(node: any): string {
-    return node.qualifiers.map(n => generateIdentifier(n)).join(' ');
-  }
-
-  function generateArgumentDeclaration(node: any): string {
-    if (node.type !== Syntax.ArgumentDeclaration) {
-      throw new Error('Expected argument declaration but got type: ' + node.type);
-    }
-    return generateQualifierList(node) + (node.symbol === null ? '' : ' ' + generateDeclarator(node.symbol));
+    return node.qualifiers.map(n => generateIdentifier(n) + ' ').join('');
   }
 
   function generateExpression(node: any, precedence: Precedence): string {
     var result: any;
 
-    switch (node.type) {
+    switch (node.kind) {
     case Syntax.SequenceExpression:
       result = node.expressions.map(n => generateExpression(n, Precedence.Assignment)).join(', ');
       result = parenthesize(result, Precedence.Sequence, precedence);
@@ -378,11 +331,11 @@ module cppcodegen {
       break;
 
     case Syntax.NullLiteral:
-      result = 'NULL';
+      result = nullptr;
       break;
 
     default:
-      throw new Error('Unknown expression type: ' + node.type);
+      throw new Error('Unknown expression kind: ' + node.kind);
     }
 
     return result;
@@ -391,7 +344,7 @@ module cppcodegen {
   function generateStatement(node: any): string {
     var result: any;
 
-    switch (node.type) {
+    switch (node.kind) {
     case Syntax.BlockStatement:
       result = '{\n';
       increaseIndent();
@@ -457,30 +410,109 @@ module cppcodegen {
 
     case Syntax.ForStatement:
       result = 'for (';
-      result += node.init.type === Syntax.VariableDeclaration ? generateStatement(node.init) : generateExpression(node.init, Precedence.Sequence) + ';';
+      result += node.init.kind === Syntax.VariableDeclaration ? generateStatement(node.init) : generateExpression(node.init, Precedence.Sequence) + ';';
       result += node.test !== null ? ' ' + generateExpression(node.test, Precedence.Sequence) + ';' : ';';
       result += (node.update !== null ? ' ' + generateExpression(node.update, Precedence.Sequence) : '') + ') ';
       result += generateStatement(node.body);
       break;
 
     case Syntax.VariableDeclaration:
-      result = generateQualifierList(node) + ' ' + node.symbols.map(s => generateDeclarator(s)).join(', ') + ';';
+      var prefix: string = null;
+      result = (generateQualifierList(node) + node.variables.map((n, i) => {
+        var context: WrapContext = new WrapContext();
+        context.includePrefix = i === 0;
+        var result: string = generateVariable(n, context);
+        if (prefix !== null && prefix !== context.prefix) {
+          throw new Error('Type prefix ' + prefix + ' does not match type prefix ' + context.prefix);
+        }
+        prefix = context.prefix;
+        return result;
+      }).join(', ')).trim() + ';';
       break;
 
     case Syntax.FunctionDeclaration:
-      result = generateQualifierList(node) + ' ' + generateDeclarator(node.symbol) + ' ' + generateStatement(node.body);
+      result = generateQualifierList(node) + wrapIdentifierWithType(node.type, node.id, new WrapContext()) +
+        (node.body !== null ? ' ' + generateStatement(node.body) : ';');
       break;
 
     default:
-      throw new Error('Unknown statement type: ' + node.type);
+      throw new Error('Unknown statement kind: ' + node.kind);
     }
 
     return result;
   }
 
+  class WrapContext {
+    prefix: string = '';
+    before: string = '';
+    after: string = '';
+    isWrapping: boolean = false;
+    includePrefix: boolean = true;
+  }
+
+  function wrapType(node: any, context: WrapContext) {
+    switch (node.kind) {
+    case Syntax.Identifier:
+      context.prefix = node.name;
+      break;
+
+    case Syntax.ConstType:
+    case Syntax.VolatileType:
+      wrapType(node.inner, context);
+      var keyword: string = node.kind === Syntax.ConstType ? 'const ' : 'volatile ';
+      if (context.isWrapping) context.before = context.before + keyword;
+      else context.prefix = keyword + context.prefix;
+      break;
+
+    case Syntax.PointerType:
+    case Syntax.ReferenceType:
+      wrapType(node.inner, context);
+      context.isWrapping = true;
+      if (node.inner.kind === Syntax.ArrayType || node.inner.kind === Syntax.FunctionType) {
+        context.before += '(';
+        context.after = ')' + context.after;
+      }
+      context.before += node.kind === Syntax.PointerType ? '*' : '&';
+      break;
+
+    case Syntax.ArrayType:
+      wrapType(node.inner, context);
+      context.isWrapping = true;
+      context.after = '[' + (node.size !== null ? generateExpression(node.size, Precedence.Sequence) : '') + ']' + context.after;
+      break;
+
+    case Syntax.FunctionType:
+      wrapType(node['return'], context);
+      context.isWrapping = true;
+      context.after = '(' + node['arguments'].map(n => generateVariable(n, new WrapContext())).join(', ') + ')' + context.after;
+      break;
+
+    default:
+      throw new Error('Unknown type node kind: ' + node.kind);
+    }
+  }
+
+  function wrapIdentifierWithType(type: any, id: any, context: WrapContext) {
+    wrapType(type, context);
+    return ((context.includePrefix ? context.prefix + ' ' : '') +
+      (id !== null ? context.before + generateIdentifier(id) : context.before.trim()) + context.after).trim();
+  }
+
+  function generateVariable(node: any, context: WrapContext): string {
+    if (node.kind !== Syntax.Variable) {
+      throw new Error('Expected variable but got kind: ' + node.kind);
+    }
+    if (node.id === null && node.init !== null) {
+      throw new Error('Cannot initialize anonymous variable');
+    }
+    return wrapIdentifierWithType(node.type, node.id, context) +
+      (node.init !== null ? ' = ' + generateExpression(node.init, Precedence.Assignment) : '');
+  }
+
   export interface Options {
     indent?: string;
     base?: string;
+    nullptr?: string;
   }
 
   export function generate(node: any, options?: Options): string {
@@ -489,8 +521,9 @@ module cppcodegen {
     options = options || {};
     indent = options.indent || '    ';
     base = options.base || '';
+    nullptr = options.nullptr ? 'nullptr' : 'NULL';
 
-    switch (node.type) {
+    switch (node.kind) {
     case Syntax.BlockStatement:
     case Syntax.BreakStatement:
     case Syntax.ContinueStatement:
@@ -527,22 +560,25 @@ module cppcodegen {
       result = generateExpression(node, Precedence.Sequence);
       break;
 
-    case Syntax.Declarator:
-      result = generateDeclarator(node);
+    case Syntax.MemberType:
+    case Syntax.ConstType:
+    case Syntax.VolatileType:
+    case Syntax.PointerType:
+    case Syntax.ReferenceType:
+    case Syntax.FunctionType:
+    case Syntax.MemberPointerType:
+    case Syntax.ArrayType:
+    case Syntax.TemplateType:
+    case Syntax.ObjectType:
+      result = wrapIdentifierWithType(node, null, new WrapContext());
       break;
 
-    case Syntax.ArgumentDeclaration:
-      result = generateArgumentDeclaration(node);
-      break;
-
-    case Syntax.DeclaratorPrefix:
-    case Syntax.DeclaratorFunction:
-    case Syntax.DeclaratorArray:
-      result = generateDeclaratorWrapper(node, '');
+    case Syntax.Variable:
+      result = generateVariable(node, new WrapContext());
       break;
 
     default:
-      throw new Error('Unknown node type: ' + node.type);
+      throw new Error('Unknown node kind: ' + node.kind);
     }
 
     return result;

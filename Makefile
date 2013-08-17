@@ -5,8 +5,8 @@ SOURCES= \
 
 TESTS= \
 	tests/common.ts \
-	tests/declarators.ts \
-	tests/parenthesizing.ts
+	tests/parenthesizing.ts \
+	tests/types.ts
 
 build:
 	time tsc $(SOURCES) --sourcemap --out compiled.js
