@@ -182,6 +182,15 @@ test(SpecializeTemplate(
 
 test(SpecializeTemplate(
   Identifier('a'), [
+  BinaryExpression('>=',
+    Identifier('b'),
+    Identifier('c'))]
+), [
+  'a<b >= c>',
+]);
+
+test(SpecializeTemplate(
+  Identifier('a'), [
   SpecializeTemplate(
     Identifier('b'), [
     BinaryExpression('>',

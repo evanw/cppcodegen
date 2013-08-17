@@ -38,7 +38,7 @@ module cppcodegen {
     export var ReturnStatement: string       = 'ReturnStatement';       // { argument: Expression | null }
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
     export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], variables: Variable[] }
-    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], type: Type, id: Identifier, body: BlockStatement | null }
+    export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], type: Type, id: Type, body: BlockStatement | null }
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
     export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration | null, test: Expression | null, update: Expression | null, body: Statement }
 
@@ -54,7 +54,7 @@ module cppcodegen {
     export var ObjectType: string            = 'ObjectType';            // { keyword: 'struct' | 'union' | 'class', id: Identifier, bases: Type[], body: BlockStatement }
 
     // Other
-    export var Variable: string              = 'Variable';              // { type: Type, id: Identifier | null, init: Expression | null }
+    export var Variable: string              = 'Variable';              // { type: Type, id: Type | null, init: Expression | null }
   }
 
   // See: http://en.cppreference.com/w/cpp/language/operator_precedence
@@ -464,9 +464,9 @@ module cppcodegen {
     isWrapping: boolean = false;
     includePrefix: boolean = true;
 
-    join(id: any, includePrefix: boolean): string {
+    join(name: any, includePrefix: boolean): string {
       return ((includePrefix ? this.prefix + ' ' : '') +
-        (id !== null ? this.before + generateIdentifier(id) : this.before.trim()) + this.after).trim();
+        (name !== null ? this.before + name : this.before.trim()) + this.after).trim();
     }
   }
 
@@ -524,7 +524,7 @@ module cppcodegen {
       break;
 
     case Syntax.FunctionType:
-      wrapType(node['return'], context);
+      if (node['return'] !== null) wrapType(node['return'], context); // The return type is null for constructors and destructors
       context.isWrapping = true;
       context.after = '(' + node['arguments'].map(n => generateVariable(n, new WrapContext())).join(', ') + ')' + context.after;
       break;
@@ -536,7 +536,8 @@ module cppcodegen {
 
   function wrapIdentifierWithType(type: any, id: any, context: WrapContext) {
     wrapType(type, context);
-    return context.join(id, context.includePrefix);
+    var name: string = id === null ? null : wrapInnerType(id);
+    return context.join(name, context.includePrefix);
   }
 
   function generateVariable(node: any, context: WrapContext): string {
