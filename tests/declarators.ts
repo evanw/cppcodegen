@@ -40,7 +40,7 @@ test(VariableDeclaration(
   [Identifier('int')],
   [Declarator(Identifier('foo'),
     DeclaratorPrefix('*',
-      DeclaratorArray(1,
+      DeclaratorArray(IntegerLiteral(1),
         DeclaratorPrefix('*',
           null))),
     NullLiteral())]
@@ -52,7 +52,7 @@ test(VariableDeclaration(
 test(VariableDeclaration(
   [Identifier('int')],
   [Declarator(Identifier('foo'),
-    DeclaratorArray(1,
+    DeclaratorArray(IntegerLiteral(1),
       DeclaratorPrefix('*',
         DeclaratorPrefix('*',
           null))),
@@ -67,7 +67,7 @@ test(VariableDeclaration(
   [Declarator(Identifier('foo'),
     DeclaratorPrefix('*',
       DeclaratorPrefix('*',
-        DeclaratorArray(1,
+        DeclaratorArray(IntegerLiteral(1),
           null))),
     NullLiteral())]
 ), [
@@ -82,7 +82,7 @@ test(VariableDeclaration(
       DeclaratorFunction([
         ArgumentDeclaration([Identifier('int')], null),
         ArgumentDeclaration([Identifier('double')], null)],
-        DeclaratorArray(1,
+        DeclaratorArray(IntegerLiteral(1),
           null))),
     NullLiteral())]
 ), [
@@ -93,7 +93,7 @@ test(VariableDeclaration(
 test(VariableDeclaration(
   [Identifier('int')],
   [Declarator(Identifier('foo'),
-    DeclaratorArray(1,
+    DeclaratorArray(IntegerLiteral(1),
       DeclaratorFunction([
         ArgumentDeclaration([Identifier('int')], null),
         ArgumentDeclaration([Identifier('double')], null)],
@@ -109,8 +109,8 @@ test(VariableDeclaration(
   [Identifier('int')],
   [Declarator(Identifier('foo'),
     DeclaratorArray(null,
-      DeclaratorArray(1,
-        DeclaratorArray(2,
+      DeclaratorArray(IntegerLiteral(1),
+        DeclaratorArray(IntegerLiteral(2),
         DeclaratorPrefix('*',
           null)))),
     NullLiteral())]

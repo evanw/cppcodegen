@@ -193,7 +193,7 @@ function DeclaratorFunction(args: any[], next: any): Object {
   };
 }
 
-function DeclaratorArray(size: number, next: any): Object {
+function DeclaratorArray(size: any, next: any): Object {
   return {
     type: 'DeclaratorArray',
     size: size,

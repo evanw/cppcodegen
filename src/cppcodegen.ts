@@ -44,7 +44,7 @@ module cppcodegen {
     export var ArgumentDeclaration: string   = 'ArgumentDeclaration';   // { qualifiers: Identifier[], symbol: Declarator | null }
     export var DeclaratorPrefix: string      = 'DeclaratorPrefix';      // { text: string, next: DeclaratorWrapper }
     export var DeclaratorFunction: string    = 'DeclaratorFunction';    // { arguments: VariableDeclaration[], next: DeclaratorWrapper }
-    export var DeclaratorArray: string       = 'DeclaratorArray';       // { size: number | null, next: DeclaratorWrapper }
+    export var DeclaratorArray: string       = 'DeclaratorArray';       // { size: Expression | null, next: DeclaratorWrapper }
   }
 
   // See: http://en.cppreference.com/w/cpp/language/operator_precedence
@@ -232,12 +232,9 @@ module cppcodegen {
       break;
 
     case Syntax.DeclaratorArray:
-      if (node.size !== null && (node.size !== (0 | node.size) || node.size < 0)) {
-        throw new Error('Declarator array with invalid size: ' + node.size);
-      }
       result = generateDeclaratorWrapper(node.next, name);
       if (node.next !== null && node.next.type === Syntax.DeclaratorPrefix) result = '(' + result + ')';
-      result += '[' + (node.size !== null ? node.size : '') + ']';
+      result += '[' + (node.size !== null ? generateExpression(node.size, Precedence.Sequence) : '') + ']';
       break;
 
     default:
