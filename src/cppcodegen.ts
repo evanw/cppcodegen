@@ -40,8 +40,7 @@ module cppcodegen {
     export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers: Identifier[], variables: Variable[] }
     export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers: Identifier[], type: Type, id: Identifier, body: BlockStatement | null }
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
-    export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration | null, test: Expression | null,
-                                                                        //   update: Expression | null, body: Statement }
+    export var ForStatement: string          = 'ForStatement';          // { setup: Expression | VariableDeclaration | null, test: Expression | null, update: Expression | null, body: Statement }
 
     // Types
     export var MemberType: string            = 'MemberType';            // { inner: Type | null, member: Identifier }
@@ -363,7 +362,7 @@ module cppcodegen {
     case Syntax.BlockStatement:
       result = '{\n';
       increaseIndent();
-      result += node.body.map(n => base + generateStatement(n) + '\n');
+      result += node.body.map(n => base + generateStatement(n) + '\n').join('');
       decreaseIndent();
       result += base + '}';
       break;
@@ -412,12 +411,9 @@ module cppcodegen {
         generatePossibleBlock(node.alternate));
       break;
 
-    case Syntax.Program:
-      result = node.body.map(n => base + generateStatement(n) + '\n');
-      break;
-
     case Syntax.ReturnStatement:
       result = 'return' + (node.argument !== null ? ' ' + generateExpression(node.argument, Precedence.Sequence) : '') + ';';
+      break;
 
     case Syntax.WhileStatement:
       result = 'while (' + generateExpression(node.test, Precedence.Sequence) + ')' + generatePossibleBlock(node.body);
@@ -571,6 +567,10 @@ module cppcodegen {
     newlineBeforeBlock = !!options.newlineBeforeBlock;
 
     switch (node.kind) {
+    case Syntax.Program:
+      result = node.body.map(n => base + generateStatement(n) + '\n').join('');
+      break;
+
     case Syntax.BlockStatement:
     case Syntax.BreakStatement:
     case Syntax.ContinueStatement:
@@ -580,7 +580,6 @@ module cppcodegen {
     case Syntax.SwitchStatement:
     case Syntax.SwitchCase:
     case Syntax.IfStatement:
-    case Syntax.Program:
     case Syntax.ReturnStatement:
     case Syntax.WhileStatement:
     case Syntax.VariableDeclaration:
@@ -631,4 +630,10 @@ module cppcodegen {
 
     return result;
   }
+}
+
+// Export the module for node
+declare var exports: any;
+if (typeof exports !== 'undefined') {
+  exports = cppcodegen;
 }
