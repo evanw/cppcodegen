@@ -156,6 +156,8 @@ module cppcodegen {
     '++': true,
     '--': true,
     'sizeof': true,
+    'delete': true,
+    'delete []': true,
   };
 
   var ObjectTypeKeywords: { [keyword: string]: boolean } = {
