@@ -41,6 +41,7 @@ module cppcodegen {
     export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers?: Identifier[], type: Type, id: Type, initializations?: Expression[] | null, body?: BlockStatement | null }
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
     export var ForStatement: string          = 'ForStatement';          // { setup?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
+    export var IncludeStatement: string      = 'IncludeStatement';      // { text: string }
 
     // Types
     export var MemberType: string            = 'MemberType';            // { inner?: Type | null, member: Identifier }
@@ -430,6 +431,10 @@ module cppcodegen {
       result += generatePossibleBlock(node.body);
       break;
 
+    case Syntax.IncludeStatement:
+      result = '#include ' + node.text;
+      break;
+
     case Syntax.VariableDeclaration:
       var prefix: string = null;
       result = (generateQualifierList(node) + node.variables.map((n, i) => {
@@ -446,7 +451,8 @@ module cppcodegen {
 
     case Syntax.FunctionDeclaration:
       result = generateQualifierList(node) + wrapIdentifierWithType(node.type, node.id, new WrapContext()) +
-        ('initializations' in node && node.initializations !== null ? ' : ' + node.initializations.map(n => generateExpression(n, Precedence.Sequence)).join(', ') : '') +
+        ('initializations' in node && node.initializations !== null && node.initializations.length > 0 ?
+          ' : ' + node.initializations.map(n => generateExpression(n, Precedence.Sequence)).join(', ') : '') +
         ('body' in node && node.body !== null ? generatePossibleBlock(node.body) : ';');
       break;
 
@@ -592,6 +598,7 @@ module cppcodegen {
     case Syntax.FunctionDeclaration:
     case Syntax.ObjectDeclaration:
     case Syntax.ForStatement:
+    case Syntax.IncludeStatement:
       result = generateStatement(node);
       break;
 
