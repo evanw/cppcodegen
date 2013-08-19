@@ -2,7 +2,7 @@
 module cppcodegen {
   var indent: string;
   var base: string;
-  var nullptr: boolean;
+  var cpp11: boolean;
   var newlineBeforeBlock: boolean;
 
   export module Syntax {
@@ -196,7 +196,7 @@ module cppcodegen {
   function join(left: string, right: string): string {
     var leftChar = left.charAt(left.length - 1);
     var rightChar = right.charAt(0);
-    if ((leftChar === '+' || leftChar === '-' || leftChar === '<' || leftChar === '>') && leftChar === rightChar ||
+    if ((leftChar === '+' || leftChar === '-' || !cpp11 && leftChar === '>') && leftChar === rightChar ||
         isIdentifierPart(leftChar) && isIdentifierPart(rightChar)) {
       return left + ' ' + right;
     }
@@ -336,7 +336,7 @@ module cppcodegen {
       break;
 
     case Syntax.NullLiteral:
-      result = nullptr ? 'nullptr' : 'NULL';
+      result = cpp11 ? 'nullptr' : 'NULL';
       break;
 
     case Syntax.SpecializeTemplate:
@@ -453,7 +453,8 @@ module cppcodegen {
       result = generateQualifierList(node) + wrapIdentifierWithType(node.type, node.id, new WrapContext()) +
         ('initializations' in node && node.initializations !== null && node.initializations.length > 0 ?
           ' : ' + node.initializations.map(n => generateExpression(n, Precedence.Sequence)).join(', ') : '') +
-        ('body' in node && node.body !== null ? generatePossibleBlock(node.body) : ';');
+        ('body' in node && node.body !== null ? node.body.kind === 'BlockStatement' ?
+          generatePossibleBlock(node.body) : ' = ' + generateExpression(node.body, Precedence.Sequence) + ';' : ';');
       break;
 
     case Syntax.ObjectDeclaration:
@@ -502,6 +503,7 @@ module cppcodegen {
         throw new Error('Unknown object type keyword: ' + node.keyword);
       }
       context.prefix = node.keyword + ('id' in node && node.id !== null ? ' ' + generateIdentifier(node.id) : '') +
+        ('bases' in node && node.bases !== null && node.bases.length > 0 ? ' : ' + node.bases.map(n => generateExpression(n, Precedence.Sequence)) : '') +
         ('body' in node && node.body !== null ? generatePossibleBlock(node.body) : '');
       break;
 
@@ -565,7 +567,7 @@ module cppcodegen {
   export interface Options {
     indent?: string;
     base?: string;
-    nullptr?: boolean;
+    cpp11?: boolean;
     newlineBeforeBlock?: boolean;
   }
 
@@ -575,7 +577,7 @@ module cppcodegen {
     options = options || {};
     indent = options.indent || '    ';
     base = options.base || '';
-    nullptr = !!options.nullptr;
+    cpp11 = !!options.cpp11;
     newlineBeforeBlock = !!options.newlineBeforeBlock;
 
     switch (node.kind) {
