@@ -650,5 +650,7 @@ module cppcodegen {
 // Export the module for node
 declare var exports: any;
 if (typeof exports !== 'undefined') {
-  exports = cppcodegen;
+  for (var name in cppcodegen) {
+    exports[name] = cppcodegen[name];
+  }
 }
