@@ -4,6 +4,7 @@ module cppcodegen {
   var base: string;
   var cpp11: boolean;
   var newlineBeforeBlock: boolean;
+  var parenthesizeAndInsideOr: boolean;
 
   export module Syntax {
     // Expressions
@@ -257,12 +258,17 @@ module cppcodegen {
         throw new Error('Binary expression with invalid operator: ' + node.operator);
       }
       var currentPrecedence: Precedence = BinaryPrecedence[node.operator];
-      result = generateExpression(node.left, currentPrecedence);
+      var parenthesizeLeftAnd: boolean = parenthesizeAndInsideOr && node.operator === '||' && node.left.kind === 'BinaryExpression' && node.left.operator === '&&';
+      var parenthesizeRightAnd: boolean = parenthesizeAndInsideOr && node.operator === '||' && node.right.kind === 'BinaryExpression' && node.right.operator === '&&';
+      result = generateExpression(node.left, parenthesizeLeftAnd ? Precedence.LogicalAND + 1 : currentPrecedence);
       if (node.operator === '[]') {
         result += '[' + generateExpression(node.right, Precedence.Sequence) + ']';
       } else {
         var space: string = node.operator === '.*' || node.operator === '->*' ? '' : ' ';
-        result += space + node.operator + space + generateExpression(node.right, currentPrecedence + 1);
+        result += space + node.operator + space + generateExpression(node.right, parenthesizeRightAnd ? Precedence.LogicalAND + 1 : currentPrecedence + 1);
+      }
+      if (parenthesizeAndInsideOr) {
+        console.log(node.operator, currentPrecedence, precedence, Precedence.LogicalAND, Precedence.LogicalOR)
       }
       result = parenthesize(result, currentPrecedence, precedence);
       break;
@@ -569,6 +575,9 @@ module cppcodegen {
     base?: string;
     cpp11?: boolean;
     newlineBeforeBlock?: boolean;
+
+    // Avoid clang's -Wlogical-op-parentheses warning
+    parenthesizeAndInsideOr?: boolean;
   }
 
   export function generate(node: any, options?: Options): string {
@@ -579,6 +588,7 @@ module cppcodegen {
     base = options.base || '';
     cpp11 = !!options.cpp11;
     newlineBeforeBlock = !!options.newlineBeforeBlock;
+    parenthesizeAndInsideOr = !!options.parenthesizeAndInsideOr;
 
     switch (node.kind) {
     case Syntax.Program:

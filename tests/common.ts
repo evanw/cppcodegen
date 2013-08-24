@@ -3,9 +3,15 @@ declare var require: any;
 
 require('source-map-support').install();
 
+var parenthesizeAndInsideOr: boolean = false;
+
 function test(node: any, expected: string[]) {
+  var _parenthesizeAndInsideOr: boolean = parenthesizeAndInsideOr;
   it(('\n' + JSON.stringify(node, null, 2)).replace(/\n/g, '\n      '), () => {
-    require('assert').strictEqual(cppcodegen.generate(node, { indent: '  ' }), expected.join('\n'));
+    require('assert').strictEqual(cppcodegen.generate(node, {
+      indent: '  ',
+      parenthesizeAndInsideOr: _parenthesizeAndInsideOr
+    }), expected.join('\n'));
   });
 }
 

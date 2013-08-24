@@ -245,3 +245,81 @@ test(SpecializeTemplate(
 ), [
   'a<("(" & b > c)>',
 ]);
+
+test(BinaryExpression('||',
+  BooleanLiteral(false),
+  BinaryExpression('&&',
+    BooleanLiteral(true),
+    BooleanLiteral(false))
+), [
+  'false || true && false',
+]);
+
+test(BinaryExpression('&&',
+  BooleanLiteral(false),
+  BinaryExpression('||',
+    BooleanLiteral(true),
+    BooleanLiteral(false))
+), [
+  'false && (true || false)',
+]);
+
+test(BinaryExpression('||',
+  BinaryExpression('&&',
+    BooleanLiteral(true),
+    BooleanLiteral(false)),
+  BooleanLiteral(false)
+), [
+  'true && false || false',
+]);
+
+test(BinaryExpression('&&',
+  BinaryExpression('||',
+    BooleanLiteral(true),
+    BooleanLiteral(false)),
+  BooleanLiteral(false)
+), [
+  '(true || false) && false',
+]);
+
+// Turn on flag for subsequent tests
+parenthesizeAndInsideOr = true;
+
+test(BinaryExpression('||',
+  BooleanLiteral(false),
+  BinaryExpression('&&',
+    BooleanLiteral(true),
+    BooleanLiteral(false))
+), [
+  'false || (true && false)',
+]);
+
+test(BinaryExpression('&&',
+  BooleanLiteral(false),
+  BinaryExpression('||',
+    BooleanLiteral(true),
+    BooleanLiteral(false))
+), [
+  'false && (true || false)',
+]);
+
+test(BinaryExpression('||',
+  BinaryExpression('&&',
+    BooleanLiteral(true),
+    BooleanLiteral(false)),
+  BooleanLiteral(false)
+), [
+  '(true && false) || false',
+]);
+
+test(BinaryExpression('&&',
+  BinaryExpression('||',
+    BooleanLiteral(true),
+    BooleanLiteral(false)),
+  BooleanLiteral(false)
+), [
+  '(true || false) && false',
+]);
+
+// Reset flag for subsequent tests
+parenthesizeAndInsideOr = false;
