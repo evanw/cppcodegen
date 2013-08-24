@@ -267,9 +267,6 @@ module cppcodegen {
         var space: string = node.operator === '.*' || node.operator === '->*' ? '' : ' ';
         result += space + node.operator + space + generateExpression(node.right, parenthesizeRightAnd ? Precedence.LogicalAND + 1 : currentPrecedence + 1);
       }
-      if (parenthesizeAndInsideOr) {
-        console.log(node.operator, currentPrecedence, precedence, Precedence.LogicalAND, Precedence.LogicalOR)
-      }
       result = parenthesize(result, currentPrecedence, precedence);
       break;
 
