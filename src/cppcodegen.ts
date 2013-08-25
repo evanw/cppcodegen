@@ -428,7 +428,7 @@ module cppcodegen {
 
     case Syntax.ForStatement:
       result = 'for (';
-      result += 'init' in node ? node.init.kind === Syntax.VariableDeclaration ? generateStatement(node.init) : generateExpression(node.init, Precedence.Sequence) + ';' : ';';
+      result += 'init' in node && node.init !== null ? node.init.kind === Syntax.VariableDeclaration ? generateStatement(node.init) : generateExpression(node.init, Precedence.Sequence) + ';' : ';';
       result += 'test' in node && node.test !== null ? ' ' + generateExpression(node.test, Precedence.Sequence) + ';' : ';';
       result += ('update' in node && node.update !== null ? ' ' + generateExpression(node.update, Precedence.Sequence) : '') + ')';
       result += generatePossibleBlock(node.body);
