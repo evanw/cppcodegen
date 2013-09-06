@@ -43,6 +43,7 @@ module cppcodegen {
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
     export var ForStatement: string          = 'ForStatement';          // { setup?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
     export var IncludeStatement: string      = 'IncludeStatement';      // { text: string }
+    export var VerbatimStatement: string     = 'VerbatimStatement';     // { text: string }
 
     // Types
     export var MemberType: string            = 'MemberType';            // { inner?: Type | null, member: Identifier }
@@ -438,6 +439,10 @@ module cppcodegen {
       result = '#include ' + node.text;
       break;
 
+    case Syntax.VerbatimStatement:
+      result = node.text;
+      break;
+
     case Syntax.VariableDeclaration:
       var prefix: string = null;
       result = (generateQualifierList(node) + node.variables.map((n, i) => {
@@ -608,6 +613,7 @@ module cppcodegen {
     case Syntax.ObjectDeclaration:
     case Syntax.ForStatement:
     case Syntax.IncludeStatement:
+    case Syntax.VerbatimStatement:
       result = generateStatement(node);
       break;
 
