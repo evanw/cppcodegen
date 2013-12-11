@@ -1,11 +1,11 @@
 {
   "name": "cppcodegen",
   "description": "Generates C++ code from a JSON AST",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "./cppcodegen.js",
   "devDependencies": {
     "source-map-support": "0.2.2",
-    "typescript": "0.9.1",
+    "typescript": "0.9.5",
     "mocha": "1.8.1"
   }
 }

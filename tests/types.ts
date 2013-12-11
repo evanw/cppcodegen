@@ -262,3 +262,11 @@ test(ObjectDeclaration(
   '  static int foo;',
   '};',
 ]);
+
+// declare foo as struct Foo
+test(ObjectDeclaration(
+  ObjectType('struct', Identifier('Foo'), [Identifier('IFoo'), Identifier('IBar')], BlockStatement([]))
+), [
+  'struct Foo : IFoo, IBar {',
+  '};',
+]);

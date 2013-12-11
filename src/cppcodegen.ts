@@ -511,7 +511,7 @@ module cppcodegen {
         throw new Error('Unknown object type keyword: ' + node.keyword);
       }
       context.prefix = node.keyword + ('id' in node && node.id !== null ? ' ' + generateIdentifier(node.id) : '') +
-        ('bases' in node && node.bases !== null && node.bases.length > 0 ? ' : ' + node.bases.map(n => generateExpression(n, Precedence.Sequence)) : '') +
+        ('bases' in node && node.bases !== null && node.bases.length > 0 ? ' : ' + node.bases.map(n => generateExpression(n, Precedence.Sequence)).join(', ') : '') +
         ('body' in node && node.body !== null ? generatePossibleBlock(node.body) : '');
       break;
 
@@ -663,7 +663,9 @@ module cppcodegen {
 // Export the module for node
 declare var exports: any;
 if (typeof exports !== 'undefined') {
-  for (var name in cppcodegen) {
-    exports[name] = cppcodegen[name];
-  }
+  (() => {
+    for (var name in cppcodegen) {
+      exports[name] = cppcodegen[name];
+    }
+  })();
 }

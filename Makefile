@@ -9,11 +9,11 @@ TESTS= \
 	tests/types.ts
 
 build:
-	time node_modules/typescript/bin/tsc $(SOURCES) --sourcemap --out cppcodegen.js
+	node_modules/typescript/bin/tsc $(SOURCES) --sourcemap --out cppcodegen.js
 
 watch:
 	node_modules/typescript/bin/tsc $(SOURCES) --sourcemap --out cppcodegen.js -w
 
 test:
-	time node_modules/typescript/bin/tsc $(SOURCES) $(TESTS) --sourcemap --out test.js
+	node_modules/typescript/bin/tsc $(SOURCES) $(TESTS) --sourcemap --out test.js
 	node_modules/mocha/bin/mocha
