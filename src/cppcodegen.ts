@@ -44,7 +44,7 @@ module cppcodegen {
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
     export var EnumDeclaration: string       = 'EnumDeclaration';       // { id? Identifier, members: Variable[] }
     export var NamespaceDeclaration: string  = 'NamespaceDeclaration';  // { id? Identifier, body: BlockStatement }
-    export var ForStatement: string          = 'ForStatement';          // { setup?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
+    export var ForStatement: string          = 'ForStatement';          // { init?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
     export var IncludeStatement: string      = 'IncludeStatement';      // { text: string }
     export var VerbatimStatement: string     = 'VerbatimStatement';     // { text: string }
 
@@ -111,7 +111,7 @@ module cppcodegen {
   var AssignmentOperators: { [operator: string]: boolean } = {
     '=': true,
     '+=': true,
-    '−=': true,
+    '-=': true,
     '*=': true,
     '/=': true,
     '%=': true,
