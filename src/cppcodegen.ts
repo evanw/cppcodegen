@@ -42,6 +42,7 @@ module cppcodegen {
     export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers?: Identifier[], variables: Variable[] }
     export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers?: Identifier[], type: Type, id: Type, initializations?: Expression[] | null, body?: BlockStatement | null }
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
+    export var EnumDeclaration: string       = 'EnumDeclaration';       // { id? Identifier, members: Variable[] }
     export var ForStatement: string          = 'ForStatement';          // { setup?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
     export var IncludeStatement: string      = 'IncludeStatement';      // { text: string }
     export var VerbatimStatement: string     = 'VerbatimStatement';     // { text: string }
@@ -58,7 +59,7 @@ module cppcodegen {
     export var ObjectType: string            = 'ObjectType';            // { keyword: 'struct' | 'union' | 'class', id?: Identifier | null, bases: Expression[], body?: BlockStatement | null }
 
     // Other
-    export var Variable: string              = 'Variable';              // { type: Type, id?: Type | null, init?: Expression | null }
+    export var Variable: string              = 'Variable';              // { type: Type, id?: Identifier | null, init?: Expression | null }
   }
 
   // See: http://en.cppreference.com/w/cpp/language/operator_precedence
@@ -476,6 +477,14 @@ module cppcodegen {
       result = wrapIdentifierWithType(node.type, null, new WrapContext()) + ';';
       break;
 
+    case Syntax.EnumDeclaration:
+      result = 'enum' + (cpp11 && node.id ? ' class' : '') + (node.id ? ' ' + generateIdentifier(node.id) : '') + beforeBlock() + '{\n';
+      increaseIndent();
+      result += node.members.map(n => base + generateIdentifier(n.id) + (n.init ? ' = ' + generateExpression(n.init, Precedence.Sequence) : '') + ',\n').join('');
+      decreaseIndent();
+      result += base + '};';
+      break;
+
     default:
       throw new Error('Unknown statement kind: ' + node.kind);
     }
@@ -618,6 +627,7 @@ module cppcodegen {
     case Syntax.VariableDeclaration:
     case Syntax.FunctionDeclaration:
     case Syntax.ObjectDeclaration:
+    case Syntax.EnumDeclaration:
     case Syntax.ForStatement:
     case Syntax.IncludeStatement:
     case Syntax.VerbatimStatement:
@@ -640,6 +650,7 @@ module cppcodegen {
     case Syntax.StringLiteral:
     case Syntax.NullLiteral:
     case Syntax.SpecializeTemplate:
+    case Syntax.Lambda:
       result = generateExpression(node, Precedence.Sequence);
       break;
 
