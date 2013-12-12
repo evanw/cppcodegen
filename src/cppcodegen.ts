@@ -43,6 +43,7 @@ module cppcodegen {
     export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers?: Identifier[], type: Type, id: Type, initializations?: Expression[] | null, body?: BlockStatement | null }
     export var ObjectDeclaration: string     = 'ObjectDeclaration';     // { type: ObjectType }
     export var EnumDeclaration: string       = 'EnumDeclaration';       // { id? Identifier, members: Variable[] }
+    export var NamespaceDeclaration: string  = 'NamespaceDeclaration';  // { id? Identifier, body: BlockStatement }
     export var ForStatement: string          = 'ForStatement';          // { setup?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
     export var IncludeStatement: string      = 'IncludeStatement';      // { text: string }
     export var VerbatimStatement: string     = 'VerbatimStatement';     // { text: string }
@@ -485,6 +486,10 @@ module cppcodegen {
       result += base + '};';
       break;
 
+    case Syntax.NamespaceDeclaration:
+      result = 'namespace' + (node.id ? ' ' + generateIdentifier(node.id) : '') + generatePossibleBlock(node.body);
+      break;
+
     default:
       throw new Error('Unknown statement kind: ' + node.kind);
     }
@@ -628,6 +633,7 @@ module cppcodegen {
     case Syntax.FunctionDeclaration:
     case Syntax.ObjectDeclaration:
     case Syntax.EnumDeclaration:
+    case Syntax.NamespaceDeclaration:
     case Syntax.ForStatement:
     case Syntax.IncludeStatement:
     case Syntax.VerbatimStatement:
