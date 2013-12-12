@@ -407,7 +407,7 @@ module cppcodegen {
 
     case Syntax.SwitchStatement:
       result = 'switch (' + generateExpression(node.discriminant, Precedence.Sequence) + ')' + beforeBlock() + '{\n';
-      result += node.cases.map(n => base + generateStatement(n) + '\n');
+      result += node.cases.map(n => base + generateStatement(n)).join('');
       result += base + '}';
       break;
 
@@ -418,7 +418,7 @@ module cppcodegen {
         result = 'default:\n';
       }
       increaseIndent();
-      result += node.consequent.map(n => base + generateStatement(n) + '\n');
+      result += node.consequent.map(n => base + generateStatement(n) + '\n').join('');
       decreaseIndent();
       break;
 
