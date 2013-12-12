@@ -24,6 +24,7 @@ module cppcodegen {
     export var StringLiteral: string         = 'StringLiteral';         // { value: string }
     export var NullLiteral: string           = 'NullLiteral';           // {}
     export var SpecializeTemplate: string    = 'SpecializeTemplate';    // { template: Expression, parameters: Expression[] }
+    export var Lambda: string                = 'Lambda';                // { capture?: Expression, arguments?: Variable[], return?: Expression, body: BlockStatement }
 
     // Statements
     export var BlockStatement: string        = 'BlockStatement';        // { body: Statement[] }
@@ -346,6 +347,12 @@ module cppcodegen {
     case Syntax.SpecializeTemplate:
       result = generateExpression(node.template, Precedence.Scope) + '<' +
         join(node.parameters.map(n => generateExpression(n, Precedence.Sequence)).join(', '), '>');
+      break;
+
+    case Syntax.Lambda:
+      result = '[' + (node.capture ? node.capture.map(n => generateExpression(n, Precedence.Sequence)).join(', ') : '') + ']' +
+        (node.arguments ? '(' + node.arguments.map(n => generateVariable(n, new WrapContext())).join(', ') + ')' : '') +
+        generatePossibleBlock(node.body);
       break;
 
     default:
