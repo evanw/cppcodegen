@@ -3,6 +3,7 @@
   "description": "Generates C++ code from a JSON AST",
   "version": "0.1.2",
   "main": "./cppcodegen.js",
+  "repository": "https://github.com/evanw/cppcodegen",
   "devDependencies": {
     "source-map-support": "0.2.2",
     "typescript": "0.9.5",
