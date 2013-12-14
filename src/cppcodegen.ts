@@ -45,8 +45,8 @@ module cppcodegen {
     export var EnumDeclaration: string       = 'EnumDeclaration';       // { id? Identifier, members: Variable[] }
     export var NamespaceDeclaration: string  = 'NamespaceDeclaration';  // { id? Identifier, body: BlockStatement }
     export var ForStatement: string          = 'ForStatement';          // { init?: Expression | VariableDeclaration | null, test?: Expression | null, update?: Expression | null, body: Statement }
-    export var IncludeStatement: string      = 'IncludeStatement';      // { text: string }
-    export var VerbatimStatement: string     = 'VerbatimStatement';     // { text: string }
+    export var PreprocessorStatement: string = 'PreprocessorStatement'; // { text: string }
+    export var VerbatimStatement: string     = 'VerbatimStatement';     // { text: string, newlineBefore?: boolean }
 
     // Types
     export var MemberType: string            = 'MemberType';            // { inner?: Type | null, member: Identifier }
@@ -372,6 +372,46 @@ module cppcodegen {
     return (node.kind === Syntax.BlockStatement ? beforeBlock() : ' ') + generateStatement(node);
   }
 
+  enum StatementType {
+    FUNCTION,
+    PREPROCESSOR,
+    OTHER,
+    UNIQUE,
+  }
+
+  enum NoTrailingNewline {
+    NO,
+    YES,
+  }
+
+  function generateStatementList(statements: any[], noTrailingNewline = NoTrailingNewline.NO): string {
+    // Automatically insert newlines between code blocks of different types
+    var oldStatementType = null;
+    var uniqueType = StatementType.UNIQUE;
+    var alwaysNewline = [
+      'ForStatement',
+      'WhileStatement',
+      'SwitchStatement',
+      'DoWhileStatement',
+      'NamespaceDeclaration',
+      'ObjectDeclaration',
+      'FunctionDeclaration',
+      'EnumDeclaration',
+    ];
+    return statements.map((n, i) => {
+      var newStatementType =
+        n.kind === 'FunctionDeclaration' && !n.body ? StatementType.FUNCTION :
+        n.kind === 'PreprocessorStatement' ? StatementType.PREPROCESSOR :
+        alwaysNewline.indexOf(n.kind) >= 0 ? uniqueType++ :
+        StatementType.OTHER;
+      var verbatimNewline = i && n.kind === 'VerbatimStatement' && n.newlineBefore;
+      var leadingNewline = oldStatementType !== null && oldStatementType !== newStatementType;
+      var trailingNewline = i !== statements.length - 1 || noTrailingNewline !== NoTrailingNewline.YES;
+      oldStatementType = verbatimNewline ? null : newStatementType;
+      return (leadingNewline || verbatimNewline ? '\n' : '') + base + generateStatement(n) + (trailingNewline ? '\n' : '');
+    }).join('');
+  }
+
   function generateStatement(node: any): string {
     var result: any;
 
@@ -379,7 +419,7 @@ module cppcodegen {
     case Syntax.BlockStatement:
       result = '{\n';
       increaseIndent();
-      result += node.body.map(n => base + generateStatement(n) + '\n').join('');
+      result += generateStatementList(node.body);
       decreaseIndent();
       result += base + '}';
       break;
@@ -407,7 +447,7 @@ module cppcodegen {
 
     case Syntax.SwitchStatement:
       result = 'switch (' + generateExpression(node.discriminant, Precedence.Sequence) + ')' + beforeBlock() + '{\n';
-      result += node.cases.map(n => base + generateStatement(n)).join('');
+      result += generateStatementList(node.cases);
       result += base + '}';
       break;
 
@@ -418,7 +458,7 @@ module cppcodegen {
         result = 'default:\n';
       }
       increaseIndent();
-      result += node.consequent.map(n => base + generateStatement(n) + '\n').join('');
+      result += generateStatementList(node.consequent, NoTrailingNewline.YES);
       decreaseIndent();
       break;
 
@@ -444,12 +484,12 @@ module cppcodegen {
       result += generatePossibleBlock(node.body);
       break;
 
-    case Syntax.IncludeStatement:
-      result = '#include ' + node.text;
+    case Syntax.PreprocessorStatement:
+      result = node.text;
       break;
 
     case Syntax.VerbatimStatement:
-      result = node.text;
+      result = node.text.split('\n').join('\n' + base);
       break;
 
     case Syntax.VariableDeclaration:
@@ -615,7 +655,7 @@ module cppcodegen {
 
     switch (node.kind) {
     case Syntax.Program:
-      result = node.body.map(n => base + generateStatement(n) + '\n').join('');
+      result = generateStatementList(node.body);
       break;
 
     case Syntax.BlockStatement:
@@ -635,7 +675,7 @@ module cppcodegen {
     case Syntax.EnumDeclaration:
     case Syntax.NamespaceDeclaration:
     case Syntax.ForStatement:
-    case Syntax.IncludeStatement:
+    case Syntax.PreprocessorStatement:
     case Syntax.VerbatimStatement:
       result = generateStatement(node);
       break;
