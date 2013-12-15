@@ -38,6 +38,7 @@ module cppcodegen {
     export var IfStatement: string           = 'IfStatement';           // { test: Expression, consequent: Statement, alternate?: Statement | null }
     export var Program: string               = 'Program';               // { body: Statement[] }
     export var ReturnStatement: string       = 'ReturnStatement';       // { argument?: Expression | null }
+    export var ThrowStatement: string        = 'ThrowStatement';        // { argument?: Expression | null }
     export var WhileStatement: string        = 'WhileStatement';        // { test: Expression, body: Statement }
     export var VariableDeclaration: string   = 'VariableDeclaration';   // { qualifiers?: Identifier[], variables: Variable[] }
     export var FunctionDeclaration: string   = 'FunctionDeclaration';   // { qualifiers?: Identifier[], type: Type, id: Type, initializations?: Expression[] | null, body?: BlockStatement | null }
@@ -369,7 +370,13 @@ module cppcodegen {
   }
 
   function generatePossibleBlock(node: any): string {
-    return (node.kind === Syntax.BlockStatement ? beforeBlock() : ' ') + generateStatement(node);
+    if (node.kind === Syntax.BlockStatement) {
+      return beforeBlock() + generateStatement(node);
+    }
+    increaseIndent();
+    var text = '\n' + base + generateStatement(node);
+    decreaseIndent();
+    return text;
   }
 
   enum StatementType {
@@ -470,6 +477,10 @@ module cppcodegen {
 
     case Syntax.ReturnStatement:
       result = 'return' + ('argument' in node && node.argument !== null ? ' ' + generateExpression(node.argument, Precedence.Sequence) : '') + ';';
+      break;
+
+    case Syntax.ThrowStatement:
+      result = 'throw' + ('argument' in node && node.argument !== null ? ' ' + generateExpression(node.argument, Precedence.Sequence) : '') + ';';
       break;
 
     case Syntax.WhileStatement:
